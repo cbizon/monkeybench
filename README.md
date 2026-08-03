@@ -114,10 +114,9 @@ settings remain Brunner deployment configuration and are not hard-coded here.
 
 ## Sterling Campaign
 
-The Sterling campaign uses one shared agent image but two Brunner campaign
-modules so Codex and Claude credentials are never mounted into the same pod.
-Together the modules reproduce the current `granular_benchmark` model/effort
-matrix with Fable omitted:
+The Sterling campaign uses one shared agent image and one Brunner campaign
+containing both Codex and Claude trials. It reproduces the current
+`granular_benchmark` model/effort matrix with Fable omitted:
 
 - Codex: `gpt-5.6-sol`, `gpt-5.6-terra`, `gpt-5.6-luna`, `gpt-5.5`, and
   `gpt-5.4`, each at `xhigh` and `low`.
@@ -125,8 +124,14 @@ matrix with Fable omitted:
   `claude-sonnet-5` at `max` and `low`.
 
 The resulting campaign has 16 unique trials. Campaign trial IDs are
-deterministic, and rerunning either command resumes its existing Brunner
-state.
+deterministic, and rerunning the command resumes its existing Brunner state.
+
+Brunner currently configures Kubernetes Secret references on the campaign
+profile rather than on individual workloads. Consequently, this combined
+campaign mounts both provider credentials into every agent Job even though
+the launcher uses only the credential for that trial's provider. This is a
+temporary loss of least-privilege isolation until Brunner supports
+per-workload Secret references.
 
 ### Build the agent image
 
@@ -199,46 +204,31 @@ uv run python scripts/fetch_external_training.py
 
 export BRUNNER_RESOURCE_CACHE="$PWD/.resource-cache"
 export MONKEYBENCH_AGENT_IMAGE=\
-"ghcr.io/cbizon/monkeybench-agent:monkeybench-v1"
+"ghcr.io/cbizon/monkeybench-agent:9fe4142"
 export MONKEYBENCH_K8S_NAMESPACE=bizon
-export MONKEYBENCH_REVIEWER_MODEL=<fixed-codex-reviewer-model>
+export MONKEYBENCH_REVIEWER_MODEL=gpt-5.4
 
-# Run one isolated Codex canary.
-MONKEYBENCH_TRIAL_IDS=codex-gpt-5-4-low-r01 \
-MONKEYBENCH_MAX_PARALLEL=1 \
+# Run one Codex and one Claude canary in an isolated subset campaign.
+MONKEYBENCH_TRIAL_IDS=codex-gpt-5-4-low-r01,claude-sonnet-5-low-r01 \
+MONKEYBENCH_MAX_PARALLEL=2 \
 uv run brunner \
   --benchmark monkeybench.definition:build_reviewed_definition \
-  campaign-run monkeybench.campaign_codex \
+  campaign-run monkeybench.campaign \
   --poll-seconds 30
 
-# Run one isolated Claude canary.
-MONKEYBENCH_TRIAL_IDS=claude-sonnet-5-low-r01 \
-MONKEYBENCH_MAX_PARALLEL=1 \
+# Run the complete campaign after both canaries pass.
 uv run brunner \
   --benchmark monkeybench.definition:build_reviewed_definition \
-  campaign-run monkeybench.campaign_claude \
-  --poll-seconds 30
-
-# Run the complete campaigns after both canaries pass.
-uv run brunner \
-  --benchmark monkeybench.definition:build_reviewed_definition \
-  campaign-run monkeybench.campaign_codex \
-  --poll-seconds 30
-
-uv run brunner \
-  --benchmark monkeybench.definition:build_reviewed_definition \
-  campaign-run monkeybench.campaign_claude \
+  campaign-run monkeybench.campaign \
   --poll-seconds 30
 ```
 
-The two campaigns may be run concurrently in separate terminals. Brunner
-counts all active Brunner Jobs in the namespace when enforcing the shared
-default cap of four concurrent trials. Each agent Job requests and is limited
-to 500 millicores and 4 GiB memory, with a 1 GiB `basic` PVC per trial. At the
-default cap, agents reserve 2 CPUs and 16 GiB memory in total.
+Brunner enforces a default cap of four concurrent trials. Each agent Job
+requests and is limited to 500 millicores and 4 GiB memory, with a 1 GiB
+`basic` PVC per trial. At the default cap, agents reserve 2 CPUs and 16 GiB
+memory in total.
 The fixed qualitative reviewer runs on the orchestrator after each
-deterministic evaluation and uses the local `AZURE_OPENAI_API_KEY`; candidate
-provider credentials remain isolated in their respective agent pods.
+deterministic evaluation and uses the local `AZURE_OPENAI_API_KEY`.
 `MONKEYBENCH_TRIAL_IDS` accepts a comma-separated list of exact deterministic
 trial IDs. A selected subset receives its own deterministic state directory,
 so canaries cannot alter the full campaign state.
@@ -253,6 +243,16 @@ agent Job continues if the orchestrator disconnects; rerun the same
 Trusted references stay local to the orchestrator and are never uploaded to
 the agent PVC. Set `MONKEYBENCH_CAMPAIGN_ROOT` to place campaign state
 elsewhere.
+
+The full campaign dashboard is `campaign-runs/model-sweep-v1/index.html`.
+Brunner regenerates it after state transitions but does not serve it. Serve
+the campaign directory locally with:
+
+```bash
+uv run python -m http.server 8000 --directory campaign-runs
+```
+
+Then open `http://localhost:8000/model-sweep-v1/`.
 
 See [docs/monkey-health-explorer-resources.md](docs/monkey-health-explorer-resources.md)
 for the source inventory and
