@@ -8,6 +8,10 @@ dependencies = [
     "brunner",
 ]
 
+[project.scripts]
+monkeybench-codex = "monkeybench.codex_wrapper:main"
+monkeybench-claude = "monkeybench.claude_wrapper:main"
+
 [dependency-groups]
 dev = [
     "pillow>=11.0",

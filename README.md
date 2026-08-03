@@ -105,6 +105,118 @@ Set `MONKEYBENCH_EVALUATOR_IMAGE` to the pushed image name when the evaluator
 should run in a container. Agent pod images and provider/model campaign
 settings remain Brunner deployment configuration and are not hard-coded here.
 
+## Sterling Campaign
+
+The Sterling campaign uses one shared agent image but two Brunner campaign
+modules so Codex and Claude credentials are never mounted into the same pod.
+Together the modules reproduce the current `granular_benchmark` model/effort
+matrix with Fable omitted:
+
+- Codex: `gpt-5.6-sol`, `gpt-5.6-terra`, `gpt-5.6-luna`, `gpt-5.5`, and
+  `gpt-5.4`, each at `xhigh` and `low`.
+- Claude: `claude-opus-5` and `claude-opus-4-8` at `max` and `low`;
+  `claude-sonnet-5` at `max` twice and `low` once.
+
+The resulting campaign has 17 trials. Campaign trial IDs are deterministic,
+and rerunning either command resumes its existing Brunner state.
+
+### Build the agent image
+
+The agent image contains Brunner, this package's remote launcher, Codex,
+Claude Code, Pillow-compatible Python tooling, ImageMagick, and Poppler. It
+does not contain the challenge images, reference answers, or training video.
+The trial pod is the security boundary: the Codex launcher disables its
+unavailable nested bubblewrap sandbox, while the Claude launcher enables
+Claude Code's weaker nested sandbox mode. Generated Sterling Pods and Jobs run
+as UID/GID 1000 with a read-only root filesystem, a writable ephemeral
+`/tmp`, dropped capabilities, and the trial PVC assigned through `fsGroup`.
+Set
+`MONKEYBENCH_CODEX_BYPASS_NESTED_SANDBOX=false` only in an environment where
+unprivileged user namespaces work inside the container.
+
+```bash
+export GHCR_OWNER=cbizon
+export IMAGE_TAG=monkeybench-v1
+export MONKEYBENCH_AGENT_IMAGE=\
+"ghcr.io/$GHCR_OWNER/monkeybench-agent:$IMAGE_TAG"
+
+docker build \
+  --platform linux/amd64 \
+  -f containers/agent.Dockerfile \
+  -t "$MONKEYBENCH_AGENT_IMAGE" \
+  .
+docker push "$MONKEYBENCH_AGENT_IMAGE"
+```
+
+Make the GHCR package public, or set
+`MONKEYBENCH_IMAGE_PULL_SECRETS` to a comma-separated list of Kubernetes
+image-pull Secret names.
+
+### Configure provider Secrets
+
+The default Secret names and keys match the existing granular benchmark
+deployment:
+
+```bash
+kubectl config use-context bizon@sterling
+
+kubectl --namespace bizon create secret generic \
+  balls-bench-codex-azure \
+  --from-literal=AZURE_OPENAI_API_KEY="$AZURE_OPENAI_API_KEY" \
+  --dry-run=client -o yaml \
+  | kubectl apply -f -
+
+kubectl --namespace bizon create secret generic \
+  balls-bench-claude-oauth \
+  --from-literal=CLAUDE_CODE_OAUTH_TOKEN="$CLAUDE_CODE_OAUTH_TOKEN" \
+  --dry-run=client -o yaml \
+  | kubectl apply -f -
+```
+
+Override `MONKEYBENCH_CODEX_SECRET`, `MONKEYBENCH_CLAUDE_SECRET`, or their
+corresponding `*_SECRET_KEY` variables if different Secrets are used.
+Codex is configured for RENCI Azure OpenAI by the remote launcher; its base
+URL can be overridden with `MONKEYBENCH_CODEX_BASE_URL`.
+
+### Run the campaigns
+
+Populate the external resource cache and use an absolute cache path. Brunner
+materializes the video and transcript into each fresh challenge before it
+creates or uploads the trial. The complete candidate workspace is then copied
+to the trial PVC, where Codex `view_image` and Claude `Read` can inspect the
+mounted images on demand.
+
+```bash
+uv run python scripts/fetch_external_training.py
+
+export BRUNNER_RESOURCE_CACHE="$PWD/.resource-cache"
+export MONKEYBENCH_AGENT_IMAGE=\
+"ghcr.io/cbizon/monkeybench-agent:monkeybench-v1"
+export MONKEYBENCH_K8S_NAMESPACE=bizon
+
+uv run brunner \
+  --benchmark monkeybench.definition \
+  campaign-run monkeybench.campaign_codex \
+  --poll-seconds 30
+
+uv run brunner \
+  --benchmark monkeybench.definition \
+  campaign-run monkeybench.campaign_claude \
+  --poll-seconds 30
+```
+
+The two campaigns may be run concurrently in separate terminals. Both default
+to two concurrent trials, one CPU, 4 GiB memory, and a 1 GiB PVC per trial.
+Override these with `MONKEYBENCH_MAX_PARALLEL`, `MONKEYBENCH_AGENT_CPU`,
+`MONKEYBENCH_AGENT_MEMORY`, and `MONKEYBENCH_TRIAL_STORAGE_SIZE`.
+
+Campaign state and dashboards are written under `campaign-runs/`. A remote
+agent Job continues if the orchestrator disconnects; rerun the same
+`campaign-run` command to collect, evaluate, and clean up completed work.
+Trusted references stay local to the orchestrator and are never uploaded to
+the agent PVC. Set `MONKEYBENCH_CAMPAIGN_ROOT` to place campaign state
+elsewhere.
+
 See [docs/monkey-health-explorer-resources.md](docs/monkey-health-explorer-resources.md)
 for the source inventory and
 [docs/benchmark-design.md](docs/benchmark-design.md) for scoring semantics.
