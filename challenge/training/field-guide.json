@@ -1,0 +1,183 @@
+{
+  "field_guides": [
+    {
+      "created_at": "2018-03-06T21:16:10.872Z",
+      "href": "/field_guides/624",
+      "id": "624",
+      "items": [
+        {
+          "content": "Marking cells @[youtube](https://youtu.be/n1cTsCz4LrI)\n\nTalk boards @[youtube](https://youtu.be/griEnT82RT8)\n\nIdentifying WBCs @[youtube](https://youtu.be/jauLFRhVr8U)",
+          "icon": "141218846",
+          "title": "Video tutorials"
+        },
+        {
+          "content": "**Q. How can I set it up to better see the Field Guide while I work?**\n**A.** You can set up a side-by-side view of the project and the Field guide by doing the following:  \n- Right-click on a guide and open in a new tab. \n- Drag that new tab away from the browser to a separate window. \n- Size the two windows to optimize the view.\nNarrowing the width of the activity window can move the extra information under the slide image, making the slide image the full width of the window.\n\n**Q. I see a large, dark shape in a cell. How can I tell if it's a Monocyte or a Lymphocyte?**\n**A.** Monocytes are 2-3 times the size of the surrounding red blood cells, while Lymphocytes are only slightly larger than the red blood cells.\n\n**Q. I see a few connected dark shapes in the cell. How can I tell if it's a Eosinophil or a Neutrophil?**\n**A.** Neutrophils have a lighter cytoplasm (background), while the Eosinophils have tiny, dark granules that created a darker cytoplasm, especially along the edge of the cell.\n\n**Q. What if I can't tell if something is a white blood cell or debris?**\n**A.** Do your best to identify any white blood cells using the example images of white blood cells and debris in the Field Guide.\n\n**Q. What if I know it's a white blood cell, but I'm unsure about the white blood cell type?**\n**A.** Some white blood cells don't quite fit the typical description for their type. Please look closely at the guide to see which type it most closely matches and mark your best determination. Remember to look for a darker background and outline of an Eosinophil, which can otherwise look like a Neutrophil.\n\n**Q. What if I don't see any white blood cells on an image?**\n**A.** That is possible and there's no need to mark anything if there aren't any white blood cells, just click \"Done\" to move to the next image.\n**Q. What if an image doesn't appear to have the red-ish or purple-ish staining that I usually see?**\n**A.** Some slides have sections with poor staining, so the red blood cells look like pale ghosts. You should still be able to see the darker staining of the interior portions of the white blood cells. Slides from different years have different stains, so some images look more pink and others more purple.\n\n**Q. Why are some images blurry or poorly stained?**\n**A.** Choose the \"Low Quality Image\" option if at least half of the image is too blurry or has too much debris to see the WBCs well. The blood smears are performed in the field at Cayo Santiago, so the conditions aren't always ideal to make perfect blood slides. We are working on reimaging a few slides that were imaged at a lowed resolution and will replace them as we get them. Please just do your best.\n\n----------\n***Single Cell Workflows***\n**Q. What if there's more than one WBC in the image?**\n**A.** Focus on the WBC that is the closest to the center and identify that one. There will be another image with the other WBC closer to the center, so it won't be missed.\n\n----------\n***Larger Image Workflows (not single cell):***\n**Q. How do I get rid of a mark I made by accident?**\n**A.** Click on the X in the upper-right corner of the circle. (if you don't see the X, click on the mark to make it show up)\n\n**Q. How do I move a mark?**\n**A.** Position the mouse over the mark until you see the hand icon, then click and drag it where you want it to go.\n\n**Q. What if a white blood cell is on the edge of the image?**\n**A.** Only mark the cell if you can see at least half the cell and can tell what it is. Do your best to determine the cell type.",
+          "icon": "38401155",
+          "title": "Activity FAQ"
+        },
+        {
+          "content": "For viewing alongside activity: Right-click on image, choose \"Open image in new tab\", pull tab into a separate window from zooniverse, resize Guide and Zooniverse windows.\n![FieldGuide](https://panoptes-uploads.zooniverse.org/project_attached_image/ba7ceef9-6c0f-411d-bcea-949a7540e761.jpeg)",
+          "icon": "193874885",
+          "title": "White Blood Cell Examples"
+        },
+        {
+          "content": "Cells are too spread out ![LooseCells-800x800.jpg](https://panoptes-uploads.zooniverse.org/production/project_attached_image/d2bf6acd-dcff-4d4c-bc7b-7bea01f7f82e.jpeg)\n\nCells are too tightly-packed and overlapping ![ThickCells-800x800.jpg](https://panoptes-uploads.zooniverse.org/production/project_attached_image/c536da1a-d2a5-44b7-a23a-1282ca26bace.jpeg)\n\nCells are evenly spaced ![GoodCells-800x800.jpg](https://panoptes-uploads.zooniverse.org/production/project_attached_image/6396fc1f-5c41-43ca-ba7b-63ba2382efb3.jpeg)\n",
+          "icon": "81831624",
+          "title": "Cell Spread Examples"
+        },
+        {
+          "content": "![Basophil Guide](https://panoptes-uploads.zooniverse.org/project_attached_image/9b0f8ec2-63d2-4d3b-96da-c70fccb51360.jpeg)",
+          "icon": "193874896",
+          "title": "Basophil Guide"
+        },
+        {
+          "content": "![Eosinophil Guide](https://panoptes-uploads.zooniverse.org/project_attached_image/c84951a8-4e13-48af-a616-91673a8f380d.jpeg)",
+          "icon": "193874897",
+          "title": "Eosinophil Guide"
+        },
+        {
+          "content": "![Lymphocyte Guide](https://panoptes-uploads.zooniverse.org/project_attached_image/170d5184-8e2b-446e-b601-cf9ebc71e07e.jpeg)",
+          "icon": "193874899",
+          "title": "Lymphocyte Guide"
+        },
+        {
+          "content": "![Monocyte Guide](https://panoptes-uploads.zooniverse.org/project_attached_image/ec8c4da4-cd56-4e16-8cca-242ecda029d2.jpeg)",
+          "icon": "193874894",
+          "title": "Monocyte Guide"
+        },
+        {
+          "content": "![Neutrophil Guide](https://panoptes-uploads.zooniverse.org/project_attached_image/038d6737-f402-4c55-89e3-79ab6d870a93.jpeg)",
+          "icon": "193874895",
+          "title": "Neutrophil Guide"
+        },
+        {
+          "content": "![Field Guide - Debris](https://panoptes-uploads.zooniverse.org/project_attached_image/f7154674-2566-4f9e-9bf8-67a9ee774d35.jpeg)",
+          "icon": "34536975",
+          "title": "Not a White Blood Cell"
+        },
+        {
+          "content": "These letter-sized pages can be printed for reference.\n[FieldGuide-updated_20240327.pdf](https://panoptes-uploads.zooniverse.org/project_attached_image/fba9b1ce-75e6-4569-93e7-f17349bb28f7.pdf)\n![WBC Guide](https://panoptes-uploads.zooniverse.org/project_attached_image/f14e5c24-558d-4e26-b434-eb2ad7cedb99.jpeg)\n![Quick Guide and Non-cell Examples](https://panoptes-uploads.zooniverse.org/project_attached_image/bf46f85b-6409-45b0-b130-fea911ac9f30.jpeg)",
+          "icon": "141218531",
+          "title": "White Blood Cell Guide for printing"
+        },
+        {
+          "content": "![Reptile_WBCs_Guide.png](https://panoptes-uploads.zooniverse.org/project_attached_image/88505303-58c7-422c-83d2-e368d008c91b.png)",
+          "icon": "199224964",
+          "title": "Reptile WBC Guide"
+        },
+        {
+          "content": "Use this to help you choose the cell type.\n![Reptile_Dichotomous_Key_Tight.png](https://panoptes-uploads.zooniverse.org/project_attached_image/d1155c02-9d03-4bb2-904a-992320404369.png)",
+          "icon": "199225680",
+          "title": "Reptile - Dichotomous Key"
+        },
+        {
+          "content": "![Reptile_NotWBCs.png](https://panoptes-uploads.zooniverse.org/project_attached_image/cab005d9-b993-41c7-a6e7-264033ad4b65.png)",
+          "icon": "199938481",
+          "title": "Reptile - Not WBCs"
+        },
+        {
+          "content": "![Lymphocytes.png](https://panoptes-uploads.zooniverse.org/project_attached_image/fe388d7b-81b3-4c86-a742-a33ac2344524.png)",
+          "icon": "199224968",
+          "title": "Reptile Lymphocytes"
+        },
+        {
+          "content": "![Monocytes.png](https://panoptes-uploads.zooniverse.org/project_attached_image/1c76259a-5785-42d8-87ac-fbfac43d1c2a.png)",
+          "icon": "199224966",
+          "title": "Reptile Monocytes"
+        },
+        {
+          "content": "![Azurophils.png](https://panoptes-uploads.zooniverse.org/project_attached_image/6d52838c-c5ea-41be-b35f-b2d7903887f3.png)",
+          "icon": "199224970",
+          "title": "Reptile Azurophils"
+        },
+        {
+          "content": "![Heterophils.png](https://panoptes-uploads.zooniverse.org/project_attached_image/b87a6825-956a-44e5-80b8-fe9f115bd562.png)",
+          "icon": "199224971",
+          "title": "Reptile Heterophils"
+        },
+        {
+          "content": "![Basophils.png](https://panoptes-uploads.zooniverse.org/project_attached_image/ebcbda50-07ad-4b8d-a8c2-32dabecfde31.png)",
+          "icon": "199224972",
+          "title": "Reptile Basophils"
+        },
+        {
+          "content": "![Eosinophils.png](https://panoptes-uploads.zooniverse.org/project_attached_image/7403189d-0259-4b5c-9652-efa709da2ac6.png)",
+          "icon": "199224973",
+          "title": "Reptile Eosinophils"
+        },
+        {
+          "content": "\u2022 Activated Thrombocyte: A thrombocyte (platelet) that has changed shape or function, usually as part of the blood clotting process.\n\u2022 Agranulocyte: A type of white blood cell that does not contain visible granules in its cytoplasm. Examples include lymphocytes and monocytes.\n\u2022 Azurophil: A type of white blood cell, typically a monocyte or lymphocyte, containing azure granules.\n\u2022 Azure Granule: A type of granule found in certain white blood cells, particularly in azurophils, that stains blue with Romanowsky-type stains.\n\u2022 Basophil: A type of white blood cell that contains granules staining dark blue or purple with basic dyes. Basophils are involved in allergic responses.\n\u2022 Basophilic Stippling: The appearance of small, blue-stained granules in red blood cells, typically indicating lead poisoning or other blood disorders.\n\u2022 Binucleated: Describes a cell that contains two nuclei.\n\u2022 Blood Smear: A thin layer of blood spread on a microscope slide and stained for examination. Used to study the number, size, and shape of blood cells.\n\u2022 Blood Typing: The process of determining an individual's blood group (e.g., A, B, AB, O) based on the presence or absence of specific antigens on the surface of red blood cells.\n\u2022 Burst Cell: A cell that has ruptured, often as a result of processing, and is no longer intact.\n\u2022 Cell Fake: An artifact in blood samples that may resemble a real cell but is not one.\n\u2022 Complete Blood Count (CBC): A blood test that measures the number and types of cells in the blood, including red blood cells, white blood cells, and platelets.\n\u2022 Crenation: The formation of abnormal notches or scallops on the edge of red blood cells, often due to osmotic changes.\n\u2022 Cytoplasm: The gel-like substance inside a cell, surrounding the nucleus, where most cellular activities occur.\n\u2022 Dichotomous Key: A tool that allows the identification of organisms or cells based on a series of choices that lead the user to the correct name.\n\u2022 DNA Sequence: The specific order of nucleotides (A, T, C, G) in a DNA molecule, which determines genetic information.\n\u2022 Eccentric: Describes a nucleus that is located off-center within a cell.\n\u2022 Echinocytes: Red blood cells with spiky or irregular edges, often due to changes in the cell membrane.\n\u2022 Eosinophil: A type of white blood cell containing granules that stain bright red or orange. Eosinophils are involved in combating parasitic infections and allergic reactions.\n\u2022 Erythrocytes: Another name for red blood cells, responsible for carrying oxygen throughout the body.\n\u2022 Genetic Testing: The process of analyzing DNA to identify changes in genes, chromosomes, or proteins, often to detect genetic disorders or to determine ancestry.\n\u2022 Granulocyte: A type of white blood cell with visible granules in its cytoplasm, such as neutrophils, eosinophils, and basophils.\n\u2022 Granules: Small particles within cells, often containing enzymes or other substances, visible when stained under a microscope.\n\u2022 Heterophils: The equivalent of neutrophils in non-mammalian species, containing large, red-staining granules.\n\u2022 Hypersegmentation: A condition where a cell's nucleus has more lobes than usual, often seen in neutrophils during certain blood disorders.\n\u2022 Lobe: A rounded projection or division of the nucleus in a cell, commonly seen in white blood cells like neutrophils.\n\u2022 Lymphocyte: A type of white blood cell involved in the immune response, often associated with the production of antibodies.\n\u2022 Lysed Cell: A cell that has been broken down or destroyed, the cell wall or membrane often having been ruptured by osmotic pressure or chemical processes.\n\u2022 Mitosis (Mitotic Figure): A cell in the process of division, particularly during mitosis, where chromosomes are visible and being separated into daughter cells.\n\u2022 Monocyte: A type of large white blood cell that can differentiate into macrophages or dendritic cells, playing a role in the immune response.\n\u2022 Neutrophil: A type of white blood cell that is the first to respond to infections, characterized by its multilobed nucleus and fine granules.\n\u2022 Nucleus: The central structure within a cell that contains DNA and controls cellular activities.\n\u2022 Parasite: An organism that lives in or on another organism (the host), often causing harm. Examples in blood include Plasmodium, Trypanosoma, and Hepatozoon.\n\u2022 Plasmodium: A genus of parasites that causes malaria, detectable in blood smears by the presence of its developmental stages within red blood cells.\n\u2022 Platelet: Also known as a thrombocyte, a small blood cell involved in clotting to prevent bleeding.\n\u2022 Polychromatophils: Immature red blood cells that are slightly larger and more purple-stained due to the presence of RNA.\n\u2022 Proerythroblast: An immature precursor cell that eventually develops into a red blood cell.\n\u2022 Reactive Monocyte: A monocyte that shows signs of activation, often in response to infection or inflammation.\n\u2022 Red Blood Cell (RBC): A blood cell responsible for carrying oxygen from the lungs to the body and carbon dioxide back to the lungs for exhalation.\n\u2022 Red Blood Cell Count (RBC Count): A measurement of the number of red blood cells in a given volume of blood.\n\u2022 Segmentation: The division of the nucleus into distinct lobes, particularly in neutrophils.\n\u2022 Slide: A flat piece of glass used to hold a sample of blood or other material for microscopic examination.\n\u2022 Species: A group of organisms that can interbreed and produce fertile offspring, used here to refer to different kinds of animals whose blood is being analyzed.\n\u2022 Stain: A chemical used to color cells or tissues so that they can be seen more clearly under a microscope.\n\u2022 Thrombocyte: Also known as a platelet, a small cell fragment involved in blood clotting.\n\u2022 Toxic Heterophil: A heterophil showing abnormal granules or vacuoles, often associated with bacterial infections.\n\u2022 Trypanosoma: A genus of parasitic protozoa, some of which cause diseases like sleeping sickness, detectable in blood smears by their elongated shape.\n\u2022 Vacuoles: Small cavities within the cytoplasm of a cell that can contain fluid, waste products, or other materials.\n\u2022 White Blood Cell (WBC): A type of blood cell that is part of the immune system, helping the body fight infection and disease.\n\u2022 White Blood Cell Count (WBC Count): A measurement of the number of white blood cells in a given volume of blood.\n\u2022 Whole Blood: Blood that has not been separated into its individual components, containing red cells, white cells, platelets, and plasma.",
+          "title": "Reptile Glossary"
+        }
+      ],
+      "language": "en",
+      "links": {
+        "attached_images": {
+          "href": "/field_guides/624/attached_images",
+          "ids": [
+            "81831624",
+            "34536975",
+            "38401155",
+            "141217744",
+            "141217809",
+            "141217859",
+            "141218531",
+            "141218599",
+            "141218846",
+            "193874885",
+            "193874886",
+            "193874887",
+            "193874888",
+            "193874889",
+            "193874890",
+            "193874894",
+            "193874895",
+            "193874896",
+            "193874897",
+            "193874899",
+            "199224964",
+            "199224965",
+            "199224966",
+            "199224967",
+            "199224968",
+            "199224969",
+            "199224970",
+            "199224971",
+            "199224972",
+            "199224973",
+            "199225680",
+            "199938481"
+          ],
+          "type": "attached_images"
+        },
+        "project": "6250"
+      },
+      "updated_at": "2025-09-26T15:42:21.560Z"
+    }
+  ],
+  "links": {
+    "field_guides.attached_images": {
+      "href": "/field_guides/{field_guides.id}/attached_images",
+      "type": "media"
+    },
+    "field_guides.project": {
+      "href": "/projects/{field_guides.project}",
+      "type": "projects"
+    }
+  },
+  "meta": {
+    "field_guides": {
+      "count": 1,
+      "first_href": "/field_guides?language=en&project_id=6250",
+      "include": [],
+      "last_href": "/field_guides?language=en&project_id=6250",
+      "next_href": null,
+      "next_page": null,
+      "page": 1,
+      "page_count": 1,
+      "page_size": 20,
+      "previous_href": null,
+      "previous_page": null
+    }
+  }
+}

@@ -1,0 +1,464 @@
+{
+  "schema_version": "1.0",
+  "coordinate_system": {
+    "origin": "top-left",
+    "x_range": [
+      0.0,
+      1.0
+    ],
+    "y_range": [
+      0.0,
+      1.0
+    ]
+  },
+  "matching_tolerance_px": 30,
+  "images": [
+    {
+      "image_id": "A",
+      "width": 1056,
+      "height": 816,
+      "cells": [
+        {
+          "cell_type": "neutrophil",
+          "x": 0.724432,
+          "y": 0.180147,
+          "x_px": 765,
+          "y_px": 147
+        },
+        {
+          "cell_type": "neutrophil",
+          "x": 0.785985,
+          "y": 0.296569,
+          "x_px": 830,
+          "y_px": 242
+        },
+        {
+          "cell_type": "lymphocyte",
+          "x": 0.944129,
+          "y": 0.297794,
+          "x_px": 997,
+          "y_px": 243
+        }
+      ]
+    },
+    {
+      "image_id": "B",
+      "width": 1056,
+      "height": 816,
+      "cells": [
+        {
+          "cell_type": "neutrophil",
+          "x": 0.169508,
+          "y": 0.356618,
+          "x_px": 179,
+          "y_px": 291
+        },
+        {
+          "cell_type": "neutrophil",
+          "x": 0.784091,
+          "y": 0.705882,
+          "x_px": 828,
+          "y_px": 576
+        }
+      ]
+    },
+    {
+      "image_id": "C",
+      "width": 1056,
+      "height": 816,
+      "cells": [
+        {
+          "cell_type": "eosinophil",
+          "x": 0.917614,
+          "y": 0.090686,
+          "x_px": 969,
+          "y_px": 74
+        },
+        {
+          "cell_type": "neutrophil",
+          "x": 0.58428,
+          "y": 0.867647,
+          "x_px": 617,
+          "y_px": 708
+        },
+        {
+          "cell_type": "eosinophil",
+          "x": 0.154356,
+          "y": 0.958333,
+          "x_px": 163,
+          "y_px": 782
+        }
+      ]
+    },
+    {
+      "image_id": "D",
+      "width": 1056,
+      "height": 816,
+      "cells": [
+        {
+          "cell_type": "neutrophil",
+          "x": 0.627841,
+          "y": 0.491422,
+          "x_px": 663,
+          "y_px": 401
+        },
+        {
+          "cell_type": "neutrophil",
+          "x": 0.907197,
+          "y": 0.761029,
+          "x_px": 958,
+          "y_px": 621
+        },
+        {
+          "cell_type": "neutrophil",
+          "x": 0.078598,
+          "y": 0.77451,
+          "x_px": 83,
+          "y_px": 632
+        },
+        {
+          "cell_type": "neutrophil",
+          "x": 0.789773,
+          "y": 0.95098,
+          "x_px": 834,
+          "y_px": 776
+        }
+      ]
+    },
+    {
+      "image_id": "E",
+      "width": 1056,
+      "height": 816,
+      "cells": [
+        {
+          "cell_type": "neutrophil",
+          "x": 0.707386,
+          "y": 0.098039,
+          "x_px": 747,
+          "y_px": 80
+        },
+        {
+          "cell_type": "lymphocyte",
+          "x": 0.662879,
+          "y": 0.099265,
+          "x_px": 700,
+          "y_px": 81
+        },
+        {
+          "cell_type": "eosinophil",
+          "x": 0.266098,
+          "y": 0.153186,
+          "x_px": 281,
+          "y_px": 125
+        },
+        {
+          "cell_type": "eosinophil",
+          "x": 0.253788,
+          "y": 0.204657,
+          "x_px": 268,
+          "y_px": 167
+        },
+        {
+          "cell_type": "neutrophil",
+          "x": 0.563447,
+          "y": 0.215686,
+          "x_px": 595,
+          "y_px": 176
+        },
+        {
+          "cell_type": "neutrophil",
+          "x": 0.038826,
+          "y": 0.314951,
+          "x_px": 41,
+          "y_px": 257
+        },
+        {
+          "cell_type": "monocyte",
+          "x": 0.347538,
+          "y": 0.661765,
+          "x_px": 367,
+          "y_px": 540
+        }
+      ]
+    },
+    {
+      "image_id": "F",
+      "width": 1056,
+      "height": 816,
+      "cells": []
+    },
+    {
+      "image_id": "G",
+      "width": 1056,
+      "height": 816,
+      "cells": [
+        {
+          "cell_type": "eosinophil",
+          "x": 0.973485,
+          "y": 0.025735,
+          "x_px": 1028,
+          "y_px": 21
+        },
+        {
+          "cell_type": "neutrophil",
+          "x": 0.666667,
+          "y": 0.408088,
+          "x_px": 704,
+          "y_px": 333
+        },
+        {
+          "cell_type": "neutrophil",
+          "x": 0.38447,
+          "y": 0.449755,
+          "x_px": 406,
+          "y_px": 367
+        },
+        {
+          "cell_type": "neutrophil",
+          "x": 0.444129,
+          "y": 0.536765,
+          "x_px": 469,
+          "y_px": 438
+        },
+        {
+          "cell_type": "neutrophil",
+          "x": 0.086174,
+          "y": 0.702206,
+          "x_px": 91,
+          "y_px": 573
+        },
+        {
+          "cell_type": "neutrophil",
+          "x": 0.575758,
+          "y": 0.96201,
+          "x_px": 608,
+          "y_px": 785
+        }
+      ]
+    },
+    {
+      "image_id": "H",
+      "width": 1056,
+      "height": 816,
+      "cells": [
+        {
+          "cell_type": "lymphocyte",
+          "x": 0.767045,
+          "y": 0.10049,
+          "x_px": 810,
+          "y_px": 82
+        },
+        {
+          "cell_type": "eosinophil",
+          "x": 0.706439,
+          "y": 0.447304,
+          "x_px": 746,
+          "y_px": 365
+        },
+        {
+          "cell_type": "neutrophil",
+          "x": 0.416667,
+          "y": 0.453431,
+          "x_px": 440,
+          "y_px": 370
+        },
+        {
+          "cell_type": "neutrophil",
+          "x": 0.555871,
+          "y": 0.930147,
+          "x_px": 587,
+          "y_px": 759
+        }
+      ]
+    },
+    {
+      "image_id": "I",
+      "width": 1056,
+      "height": 816,
+      "cells": [
+        {
+          "cell_type": "neutrophil",
+          "x": 0.476326,
+          "y": 0.420343,
+          "x_px": 503,
+          "y_px": 343
+        },
+        {
+          "cell_type": "neutrophil",
+          "x": 0.42803,
+          "y": 0.866422,
+          "x_px": 452,
+          "y_px": 707
+        }
+      ]
+    },
+    {
+      "image_id": "J",
+      "width": 1056,
+      "height": 816,
+      "cells": [
+        {
+          "cell_type": "neutrophil",
+          "x": 0.558712,
+          "y": 0.159314,
+          "x_px": 590,
+          "y_px": 130
+        },
+        {
+          "cell_type": "neutrophil",
+          "x": 0.373106,
+          "y": 0.606618,
+          "x_px": 394,
+          "y_px": 495
+        },
+        {
+          "cell_type": "neutrophil",
+          "x": 0.245265,
+          "y": 0.807598,
+          "x_px": 259,
+          "y_px": 659
+        }
+      ]
+    },
+    {
+      "image_id": "K",
+      "width": 1056,
+      "height": 816,
+      "cells": [
+        {
+          "cell_type": "neutrophil",
+          "x": 0.577652,
+          "y": 0.033088,
+          "x_px": 610,
+          "y_px": 27
+        },
+        {
+          "cell_type": "neutrophil",
+          "x": 0.400568,
+          "y": 0.323529,
+          "x_px": 423,
+          "y_px": 264
+        },
+        {
+          "cell_type": "neutrophil",
+          "x": 0.369318,
+          "y": 0.654412,
+          "x_px": 390,
+          "y_px": 534
+        },
+        {
+          "cell_type": "neutrophil",
+          "x": 0.870265,
+          "y": 0.827206,
+          "x_px": 919,
+          "y_px": 675
+        },
+        {
+          "cell_type": "neutrophil",
+          "x": 0.194129,
+          "y": 0.969363,
+          "x_px": 205,
+          "y_px": 791
+        }
+      ]
+    },
+    {
+      "image_id": "L",
+      "width": 1056,
+      "height": 816,
+      "cells": [
+        {
+          "cell_type": "neutrophil",
+          "x": 0.717803,
+          "y": 0.316176,
+          "x_px": 758,
+          "y_px": 258
+        },
+        {
+          "cell_type": "eosinophil",
+          "x": 0.75,
+          "y": 0.515931,
+          "x_px": 792,
+          "y_px": 421
+        },
+        {
+          "cell_type": "lymphocyte",
+          "x": 0.817235,
+          "y": 0.584559,
+          "x_px": 863,
+          "y_px": 477
+        },
+        {
+          "cell_type": "neutrophil",
+          "x": 0.77178,
+          "y": 0.756127,
+          "x_px": 815,
+          "y_px": 617
+        }
+      ]
+    },
+    {
+      "image_id": "M",
+      "width": 1056,
+      "height": 816,
+      "cells": [
+        {
+          "cell_type": "eosinophil",
+          "x": 0.058712,
+          "y": 0.290441,
+          "x_px": 62,
+          "y_px": 237
+        },
+        {
+          "cell_type": "neutrophil",
+          "x": 0.16572,
+          "y": 0.290441,
+          "x_px": 175,
+          "y_px": 237
+        },
+        {
+          "cell_type": "eosinophil",
+          "x": 0.898674,
+          "y": 0.515931,
+          "x_px": 949,
+          "y_px": 421
+        }
+      ]
+    },
+    {
+      "image_id": "N",
+      "width": 1056,
+      "height": 816,
+      "cells": [
+        {
+          "cell_type": "lymphocyte",
+          "x": 0.870265,
+          "y": 0.171569,
+          "x_px": 919,
+          "y_px": 140
+        },
+        {
+          "cell_type": "monocyte",
+          "x": 0.066288,
+          "y": 0.466912,
+          "x_px": 70,
+          "y_px": 381
+        },
+        {
+          "cell_type": "neutrophil",
+          "x": 0.465909,
+          "y": 0.560049,
+          "x_px": 492,
+          "y_px": 457
+        },
+        {
+          "cell_type": "neutrophil",
+          "x": 0.150568,
+          "y": 0.721814,
+          "x_px": 159,
+          "y_px": 589
+        }
+      ]
+    }
+  ]
+}

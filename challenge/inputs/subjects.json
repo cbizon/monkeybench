@@ -1,0 +1,100 @@
+{
+  "coordinate_system": {
+    "origin": "top-left",
+    "x_range": [
+      0.0,
+      1.0
+    ],
+    "y_range": [
+      0.0,
+      1.0
+    ]
+  },
+  "schema_version": "1.0",
+  "subjects": [
+    {
+      "height": 816,
+      "image_id": "A",
+      "path": "images/A.jpg",
+      "width": 1056
+    },
+    {
+      "height": 816,
+      "image_id": "B",
+      "path": "images/B.jpg",
+      "width": 1056
+    },
+    {
+      "height": 816,
+      "image_id": "C",
+      "path": "images/C.jpg",
+      "width": 1056
+    },
+    {
+      "height": 816,
+      "image_id": "D",
+      "path": "images/D.jpg",
+      "width": 1056
+    },
+    {
+      "height": 816,
+      "image_id": "E",
+      "path": "images/E.jpg",
+      "width": 1056
+    },
+    {
+      "height": 816,
+      "image_id": "F",
+      "path": "images/F.jpg",
+      "width": 1056
+    },
+    {
+      "height": 816,
+      "image_id": "G",
+      "path": "images/G.jpg",
+      "width": 1056
+    },
+    {
+      "height": 816,
+      "image_id": "H",
+      "path": "images/H.jpg",
+      "width": 1056
+    },
+    {
+      "height": 816,
+      "image_id": "I",
+      "path": "images/I.jpg",
+      "width": 1056
+    },
+    {
+      "height": 816,
+      "image_id": "J",
+      "path": "images/J.jpg",
+      "width": 1056
+    },
+    {
+      "height": 816,
+      "image_id": "K",
+      "path": "images/K.jpg",
+      "width": 1056
+    },
+    {
+      "height": 816,
+      "image_id": "L",
+      "path": "images/L.jpg",
+      "width": 1056
+    },
+    {
+      "height": 816,
+      "image_id": "M",
+      "path": "images/M.jpg",
+      "width": 1056
+    },
+    {
+      "height": 816,
+      "image_id": "N",
+      "path": "images/N.jpg",
+      "width": 1056
+    }
+  ]
+}

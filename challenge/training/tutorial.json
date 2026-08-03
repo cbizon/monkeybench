@@ -1,0 +1,87 @@
+{
+  "links": {
+    "tutorials.attached_images": {
+      "href": "/tutorials/{tutorials.id}/attached_images",
+      "type": "media"
+    },
+    "tutorials.project": {
+      "href": "/projects/{tutorials.project}",
+      "type": "projects"
+    },
+    "tutorials.workflows": {
+      "href": "/workflows?tutorial_id={tutorials.id}",
+      "type": "workflows"
+    }
+  },
+  "meta": {
+    "tutorials": {
+      "count": 1,
+      "first_href": "/tutorials?language=en",
+      "include": [],
+      "last_href": "/tutorials?language=en",
+      "next_href": null,
+      "next_page": null,
+      "page": 1,
+      "page_count": 1,
+      "page_size": 20,
+      "previous_href": null,
+      "previous_page": null
+    }
+  },
+  "tutorials": [
+    {
+      "configuration": {},
+      "created_at": "2019-05-14T16:14:44.170Z",
+      "display_name": "T_Practice-gold-pink",
+      "href": "/tutorials/2432",
+      "id": "2432",
+      "kind": "tutorial",
+      "language": "en",
+      "links": {
+        "attached_images": {
+          "href": "/tutorials/2432/attached_images",
+          "ids": [
+            "54126646",
+            "54126668",
+            "54126681",
+            "81833370",
+            "193869086"
+          ],
+          "type": "attached_images"
+        },
+        "project": "6250",
+        "workflows": [
+          "11037",
+          "14984"
+        ]
+      },
+      "steps": [
+        {
+          "content": "**Welcome to Monkey Health Explorer!**\nIn this project we ask you to look at images of cells and identify the white blood cells by type using example images in the Field Guide.\n1) Neutrophil\n2) Lymphocyte\n3) Monocyte\n4) Eosinophil\n5) Basophil\n\nYou'll also see other things - including many red blood cells (round/donut-shaped), platelets (small, dark dots), and bits of cellular debris. Don't mark these!",
+          "media": "193869086"
+        },
+        {
+          "content": "**New to Zooniverse?**\n- Navigate around the image using the tools at the upper-right corner of the image.\n\n- Click on \"Need Some Help With This Task?\" for basic help.\n\n- The FIELD GUIDE (along the right side) has:\n  - Video Tutorials\n  - An Activity FAQ\n  - White Blood Cell example images and video\n  - Debris and other non-WBC example images",
+          "media": "54126646"
+        },
+        {
+          "content": "**Goldilocks Test**\nBefore marking white blood cells in some workflows, you will be asked to look at the overall spread of the cells to determine if they are too sparse (lots of white space) or too thick (cells overlapping) to count. If in doubt, mark the spread as good. There's also an option to mark an image as low quality if it is too blurry or has too much debris.",
+          "media": "81833370"
+        },
+        {
+          "content": "**How to Mark White Blood Cells**\nFor each white blood cell in the image:\n- Click on the cell to mark it \n- Choose the cell type from the list - use the Field Guide to see examples.\n  - Some cells won't exactly fit the description or match the guide images, so make your best guess. \n  - Do mark cells cut off at the image edge if you can identify the cell type.",
+          "media": "54126668"
+        },
+        {
+          "content": "**Video tutorial**\nWatch the video tutorials in the Field Guide to help identify distinguishing characteristics of the 5 types of WBCs.",
+          "media": ""
+        },
+        {
+          "content": "When you're done identifying all white blood cells on an image:\n- Zoom all the way out to be sure you haven't missed anything.\n- Click \"Next\" when you're done, so you can check your work.\n- Click on the circle at the bottom of the image to see the answer key and tell us how you did.\n- Click \"Done\" or \"Done & Talk\" if you have feedback.\n- Once you have marked all of the practice images, go back to the project page and click on the \"Identify White Blood Cells\" workflow link.\n## Thanks and Happy Hunting! ##",
+          "media": "54126681"
+        }
+      ],
+      "updated_at": "2026-05-31T02:07:07.111Z"
+    }
+  ]
+}

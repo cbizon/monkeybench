@@ -1,0 +1,33 @@
+{
+  "schema_version": "1.0",
+  "downloads": [
+    {
+      "id": "identifying-white-blood-cells",
+      "title": "Identifying White Blood Cells in the Monkey Health Explorer Project on Zooniverse.org",
+      "source_url": "https://www.youtube.com/watch?v=jauLFRhVr8U",
+      "youtube_id": "jauLFRhVr8U",
+      "video_format": "18",
+      "subtitle_language": "en-US",
+      "assets": [
+        {
+          "role": "video",
+          "download_filename": "identifying-wbcs.mp4",
+          "cache_path": "monkeybench/identifying-wbcs.mp4",
+          "challenge_path": "training/videos/identifying-wbcs.mp4",
+          "media_type": "video/mp4",
+          "size": 12378672,
+          "sha256": "2275b688e526843b5b38d80960eaa28239f242d9eb7068aa999b7e01976ddb37"
+        },
+        {
+          "role": "subtitles",
+          "download_filename": "identifying-wbcs.en-US.vtt",
+          "cache_path": "monkeybench/identifying-wbcs.en-US.vtt",
+          "challenge_path": "training/videos/identifying-wbcs.en-US.vtt",
+          "media_type": "text/vtt",
+          "size": 8465,
+          "sha256": "6e149e31bcd86e95d39a14e1f62a9610b79da306600c24cd82a2b830d96b3bb6"
+        }
+      ]
+    }
+  ]
+}

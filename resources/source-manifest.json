@@ -1,0 +1,238 @@
+{
+  "challenge_files": [
+    {
+      "path": "challenge/inputs/images/A.jpg",
+      "sha256": "d54ff3ff5419ce320e3e530ea40079f1359591970de49f6b60d8b2c458d7bf2e",
+      "size": 174490
+    },
+    {
+      "path": "challenge/inputs/images/B.jpg",
+      "sha256": "7da287b7ccda6645d65580544fd871958d29f8832f2b3949ef7f9b6216ce4826",
+      "size": 168433
+    },
+    {
+      "path": "challenge/inputs/images/C.jpg",
+      "sha256": "e4c9f7e59980fe437796b38e4b41786fafb3d81c5a5f377ac6d11909275f8241",
+      "size": 256139
+    },
+    {
+      "path": "challenge/inputs/images/D.jpg",
+      "sha256": "7aae65fc1130f13a2feb9354759c899ce4e9ce49b7e49a963ae78b1dfae49edb",
+      "size": 266167
+    },
+    {
+      "path": "challenge/inputs/images/E.jpg",
+      "sha256": "c50c61637a7be165861d0206e2affefc2f0515e77785c9105a0e53dd6c7faf27",
+      "size": 279773
+    },
+    {
+      "path": "challenge/inputs/images/F.jpg",
+      "sha256": "9f566248a4ce706aa37f966202fed8fc26f2028e5ccf4c4aabe026ba0d77be5e",
+      "size": 181059
+    },
+    {
+      "path": "challenge/inputs/images/G.jpg",
+      "sha256": "df76f55c048574ce7a20430f4fe147598e74b170070dfcbe06b7c690062fc46e",
+      "size": 187647
+    },
+    {
+      "path": "challenge/inputs/images/H.jpg",
+      "sha256": "c973d048f6b42c10a2a38e8c2c0a8648414259fd5ab3af661c6eeb8bf5f2a6fa",
+      "size": 221674
+    },
+    {
+      "path": "challenge/inputs/images/I.jpg",
+      "sha256": "220ed572254c46e72488a25751164cec4ca665610821c82bc261ac0e62b7864d",
+      "size": 217376
+    },
+    {
+      "path": "challenge/inputs/images/J.jpg",
+      "sha256": "09516caa5fa2cc3bbe72e23d2fce58ce368b8bb41b3cb259ab2ea572e99a827e",
+      "size": 215043
+    },
+    {
+      "path": "challenge/inputs/images/K.jpg",
+      "sha256": "9f5fc65fb98545f2e60df6591962902672a7cdaf08324c52957d5b267104c028",
+      "size": 311505
+    },
+    {
+      "path": "challenge/inputs/images/L.jpg",
+      "sha256": "03aa6ac272d2045ce32fbb04e09429344436bd2fd7295ca513d7d78a77438479",
+      "size": 287124
+    },
+    {
+      "path": "challenge/inputs/images/M.jpg",
+      "sha256": "3aed9b3df31b2cf937db28d80fc714ce5d387f97264ab31d96def1c4875e86a7",
+      "size": 230239
+    },
+    {
+      "path": "challenge/inputs/images/N.jpg",
+      "sha256": "289d516208c66ade4416766c409f6a7c75ce1efd40e0e7ea5520a0a9dfc1e13f",
+      "size": 181276
+    },
+    {
+      "path": "challenge/inputs/subjects.json",
+      "sha256": "1ce291680b8a20298655390f869d9dba5c165888db1be1f8722af0dac018566e",
+      "size": 1693
+    },
+    {
+      "path": "challenge/prompt.md",
+      "sha256": "daa7c407ceb606eda771fc663711a14b080995d6b0b6f6d2352500f411f570ef",
+      "size": 1073
+    },
+    {
+      "path": "challenge/training/README.md",
+      "sha256": "6da083a32c01f975b7974295bbaee06a4bc678acd4ac91e045c40e942507ee4b",
+      "size": 1617
+    },
+    {
+      "path": "challenge/training/assets/basophil-guide.jpg",
+      "sha256": "10ae35b1e40898acd4937411bd6f3a5dfc51e3d2061e4bb22bddef54b8da9bbb",
+      "size": 291442
+    },
+    {
+      "path": "challenge/training/assets/eosinophil-guide.jpg",
+      "sha256": "54f0b908dc5659433c2a4de9ac213d18cc538edaaeb07a9309521b0de3a4d290",
+      "size": 861304
+    },
+    {
+      "path": "challenge/training/assets/lymphocyte-guide.jpg",
+      "sha256": "6270518c4da3f742ee5729963ad3e8cdc7d617bc83c22badd22d00dac32f8769",
+      "size": 1056319
+    },
+    {
+      "path": "challenge/training/assets/monocyte-guide.jpg",
+      "sha256": "0dda61bf872a4dca1425db45c046f70d28a6a9a7c0a786d4094cb3e9d7ff6f1f",
+      "size": 988780
+    },
+    {
+      "path": "challenge/training/assets/neutrophil-guide.jpg",
+      "sha256": "b4d92d390aa050b003269160e71078bdcc4d239a4d6fc58519df94bf9cc65187",
+      "size": 1062400
+    },
+    {
+      "path": "challenge/training/assets/not-a-wbc.jpg",
+      "sha256": "ba33e2b872d9fe1582215a0167e4fe21f2a3caecde5a51070f7efe2096bbae8e",
+      "size": 1121194
+    },
+    {
+      "path": "challenge/training/assets/wbc-guide.pdf",
+      "sha256": "82631292769309511fed269b70219481609371b4788e14da66e58bd4a1a311bb",
+      "size": 690370
+    },
+    {
+      "path": "challenge/training/assets/wbc-overview.jpg",
+      "sha256": "259bbeebc8758e83ed3e0d722742154cf41ef93b8ea03eec57e21a92f3d55ac6",
+      "size": 2537180
+    },
+    {
+      "path": "challenge/training/field-guide.json",
+      "sha256": "02ee48f337b8615fa94c54a3b4ae8b78be3ba2ed272828bf3547f5ec3ad9e419",
+      "size": 18103
+    },
+    {
+      "path": "challenge/training/tutorial.json",
+      "sha256": "64825ecff979c8825fd5094aa3eef7d940b5580bd975c0a6c4f87cacf268e680",
+      "size": 4055
+    },
+    {
+      "path": "challenge/training/videos/README.md",
+      "sha256": "294a783263952399c1d960f5a3766f35c18d70557fe989f19549e025d06e15df",
+      "size": 502
+    }
+  ],
+  "reference_files": [
+    {
+      "path": "reference/answer-images/A.jpg",
+      "sha256": "d98e26d2192d7e03c9a194a02cb537299634052402d4a139827a109c587f7754",
+      "size": 179587
+    },
+    {
+      "path": "reference/answer-images/B.jpg",
+      "sha256": "80d5f0d4457f8e7d3c24fc17fc69431b77175074a2f11f3dad91103ea4ceb980",
+      "size": 171787
+    },
+    {
+      "path": "reference/answer-images/C.jpg",
+      "sha256": "f87746180e7a49aad8207d2d6973097d4c3de8ffad22ceb84de3497af8a1aeb3",
+      "size": 260957
+    },
+    {
+      "path": "reference/answer-images/D.jpg",
+      "sha256": "f53bcaf8cadbcefa83890df6ba5627a731a62a0a9e74a13fa1c72b11b27b011d",
+      "size": 272227
+    },
+    {
+      "path": "reference/answer-images/E.jpg",
+      "sha256": "8857f7260df506f7c818c213d592168ecf145ccac856e075679761af74d9fc38",
+      "size": 290214
+    },
+    {
+      "path": "reference/answer-images/F.jpg",
+      "sha256": "d7c2e04aeafb68712c92ea5bbc6b1d891594cc43549a46be1f54819ac57624a5",
+      "size": 183874
+    },
+    {
+      "path": "reference/answer-images/G.jpg",
+      "sha256": "f3bcaad2c49071d78df4f33d6d653c3ae1a8bbae70964443da8efe057ef045c5",
+      "size": 197772
+    },
+    {
+      "path": "reference/answer-images/H.jpg",
+      "sha256": "755227bdb2e1d792b29e9bb0b8172498476aed5e86c6a406a79e5c78ff18b922",
+      "size": 228263
+    },
+    {
+      "path": "reference/answer-images/I.jpg",
+      "sha256": "35a068ebe7fad3f4686e3f36bbc1ba544235168d530e38a76ff2832e20f339b4",
+      "size": 220734
+    },
+    {
+      "path": "reference/answer-images/J.jpg",
+      "sha256": "8e60a2ad08aa7234704d90e53cea1220b202b8fcc3f0b425ab2f2aa957c03514",
+      "size": 219266
+    },
+    {
+      "path": "reference/answer-images/K.jpg",
+      "sha256": "ac1ce4f55ce24b6a3abea53de213d29f0deebc78cbb56c390838c6d3604c7e65",
+      "size": 319323
+    },
+    {
+      "path": "reference/answer-images/L.jpg",
+      "sha256": "54e3a578b255d2913c344929385a019153724df3ddc7498ef4d22e184b241d7f",
+      "size": 293572
+    },
+    {
+      "path": "reference/answer-images/M.jpg",
+      "sha256": "c3c7d8d0e47f2a042d405742572b9d9811483d1768504c5121faea8dfb23625f",
+      "size": 235051
+    },
+    {
+      "path": "reference/answer-images/N.jpg",
+      "sha256": "9417b9cfb7d181ec8ab414c676605b8e7626118428e99a4067548db62e143737",
+      "size": 190722
+    },
+    {
+      "path": "reference/expected-cells.json",
+      "sha256": "c66699563fd15073a55ef6fa6743183a454504a58f8c3fb09c9eb0af814d4544",
+      "size": 9269
+    },
+    {
+      "path": "reference/source-subjects.json",
+      "sha256": "d4805e8b7a215667af92175b4e62f025c2c0c1fff859c388aea50dafc2abdbea",
+      "size": 8445
+    }
+  ],
+  "schema_version": "1.0",
+  "source_project": "https://www.zooniverse.org/projects/mbarrierz/monkey-health-explorer",
+  "training_sources": {
+    "basophil-guide.jpg": "https://panoptes-uploads.zooniverse.org/project_attached_image/9b0f8ec2-63d2-4d3b-96da-c70fccb51360.jpeg",
+    "eosinophil-guide.jpg": "https://panoptes-uploads.zooniverse.org/project_attached_image/c84951a8-4e13-48af-a616-91673a8f380d.jpeg",
+    "lymphocyte-guide.jpg": "https://panoptes-uploads.zooniverse.org/project_attached_image/170d5184-8e2b-446e-b601-cf9ebc71e07e.jpeg",
+    "monocyte-guide.jpg": "https://panoptes-uploads.zooniverse.org/project_attached_image/ec8c4da4-cd56-4e16-8cca-242ecda029d2.jpeg",
+    "neutrophil-guide.jpg": "https://panoptes-uploads.zooniverse.org/project_attached_image/038d6737-f402-4c55-89e3-79ab6d870a93.jpeg",
+    "not-a-wbc.jpg": "https://panoptes-uploads.zooniverse.org/project_attached_image/f7154674-2566-4f9e-9bf8-67a9ee774d35.jpeg",
+    "wbc-guide.pdf": "https://panoptes-uploads.zooniverse.org/project_attached_image/fba9b1ce-75e6-4569-93e7-f17349bb28f7.pdf",
+    "wbc-overview.jpg": "https://panoptes-uploads.zooniverse.org/project_attached_image/ba7ceef9-6c0f-411d-bcea-949a7540e761.jpeg"
+  }
+}

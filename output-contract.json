@@ -1,0 +1,337 @@
+{
+  "schema_version": "1.0",
+  "benchmark_id": "monkey-wbc-localization",
+  "title": "Localize and type monkey white blood cells",
+  "description": "Report a normalized center point and cell type for every visible white blood cell in all 14 practice images.",
+  "submission": {
+    "manifest_path": "submission/manifest.json",
+    "schema": {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "schema_version",
+        "detections"
+      ],
+      "properties": {
+        "schema_version": {
+          "const": "1.0",
+          "description": "Submission contract version."
+        },
+        "detections": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Path, relative to this manifest, to the cell detections JSON artifact."
+        }
+      }
+    }
+  },
+  "run_status_path": "submission/run-status.json",
+  "work_units": [
+    {
+      "id": "classify-practice-images",
+      "description": "Inspect all 14 images and report every white blood cell as a typed normalized point."
+    }
+  ],
+  "artifacts": [
+    {
+      "id": "cell-detections",
+      "description": "One entry per image containing zero or more typed white blood cell center points.",
+      "manifest_pointer": "/detections",
+      "media_type": "application/json",
+      "minimum_bytes": 100,
+      "maximum_bytes": 1048576,
+      "details": [
+        "Coordinates use the complete original image with origin at the top-left.",
+        "Each physical cell must appear at most once.",
+        "All image IDs A through N must appear exactly once, in any order."
+      ],
+      "json_schema": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "schema_version",
+          "images"
+        ],
+        "properties": {
+          "schema_version": {
+            "const": "1.0"
+          },
+          "images": {
+            "type": "array",
+            "minItems": 14,
+            "maxItems": 14,
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "image_id",
+                "detections"
+              ],
+              "properties": {
+                "image_id": {
+                  "enum": [
+                    "A",
+                    "B",
+                    "C",
+                    "D",
+                    "E",
+                    "F",
+                    "G",
+                    "H",
+                    "I",
+                    "J",
+                    "K",
+                    "L",
+                    "M",
+                    "N"
+                  ]
+                },
+                "detections": {
+                  "type": "array",
+                  "maxItems": 100,
+                  "items": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "required": [
+                      "x",
+                      "y",
+                      "cell_type"
+                    ],
+                    "properties": {
+                      "x": {
+                        "type": "number",
+                        "minimum": 0.0,
+                        "maximum": 1.0
+                      },
+                      "y": {
+                        "type": "number",
+                        "minimum": 0.0,
+                        "maximum": 1.0
+                      },
+                      "cell_type": {
+                        "enum": [
+                          "neutrophil",
+                          "lymphocyte",
+                          "monocyte",
+                          "eosinophil",
+                          "basophil"
+                        ]
+                      }
+                    }
+                  }
+                }
+              }
+            },
+            "allOf": [
+              {
+                "contains": {
+                  "properties": {
+                    "image_id": {
+                      "const": "A"
+                    }
+                  },
+                  "required": [
+                    "image_id"
+                  ]
+                },
+                "minContains": 1,
+                "maxContains": 1
+              },
+              {
+                "contains": {
+                  "properties": {
+                    "image_id": {
+                      "const": "B"
+                    }
+                  },
+                  "required": [
+                    "image_id"
+                  ]
+                },
+                "minContains": 1,
+                "maxContains": 1
+              },
+              {
+                "contains": {
+                  "properties": {
+                    "image_id": {
+                      "const": "C"
+                    }
+                  },
+                  "required": [
+                    "image_id"
+                  ]
+                },
+                "minContains": 1,
+                "maxContains": 1
+              },
+              {
+                "contains": {
+                  "properties": {
+                    "image_id": {
+                      "const": "D"
+                    }
+                  },
+                  "required": [
+                    "image_id"
+                  ]
+                },
+                "minContains": 1,
+                "maxContains": 1
+              },
+              {
+                "contains": {
+                  "properties": {
+                    "image_id": {
+                      "const": "E"
+                    }
+                  },
+                  "required": [
+                    "image_id"
+                  ]
+                },
+                "minContains": 1,
+                "maxContains": 1
+              },
+              {
+                "contains": {
+                  "properties": {
+                    "image_id": {
+                      "const": "F"
+                    }
+                  },
+                  "required": [
+                    "image_id"
+                  ]
+                },
+                "minContains": 1,
+                "maxContains": 1
+              },
+              {
+                "contains": {
+                  "properties": {
+                    "image_id": {
+                      "const": "G"
+                    }
+                  },
+                  "required": [
+                    "image_id"
+                  ]
+                },
+                "minContains": 1,
+                "maxContains": 1
+              },
+              {
+                "contains": {
+                  "properties": {
+                    "image_id": {
+                      "const": "H"
+                    }
+                  },
+                  "required": [
+                    "image_id"
+                  ]
+                },
+                "minContains": 1,
+                "maxContains": 1
+              },
+              {
+                "contains": {
+                  "properties": {
+                    "image_id": {
+                      "const": "I"
+                    }
+                  },
+                  "required": [
+                    "image_id"
+                  ]
+                },
+                "minContains": 1,
+                "maxContains": 1
+              },
+              {
+                "contains": {
+                  "properties": {
+                    "image_id": {
+                      "const": "J"
+                    }
+                  },
+                  "required": [
+                    "image_id"
+                  ]
+                },
+                "minContains": 1,
+                "maxContains": 1
+              },
+              {
+                "contains": {
+                  "properties": {
+                    "image_id": {
+                      "const": "K"
+                    }
+                  },
+                  "required": [
+                    "image_id"
+                  ]
+                },
+                "minContains": 1,
+                "maxContains": 1
+              },
+              {
+                "contains": {
+                  "properties": {
+                    "image_id": {
+                      "const": "L"
+                    }
+                  },
+                  "required": [
+                    "image_id"
+                  ]
+                },
+                "minContains": 1,
+                "maxContains": 1
+              },
+              {
+                "contains": {
+                  "properties": {
+                    "image_id": {
+                      "const": "M"
+                    }
+                  },
+                  "required": [
+                    "image_id"
+                  ]
+                },
+                "minContains": 1,
+                "maxContains": 1
+              },
+              {
+                "contains": {
+                  "properties": {
+                    "image_id": {
+                      "const": "N"
+                    }
+                  },
+                  "required": [
+                    "image_id"
+                  ]
+                },
+                "minContains": 1,
+                "maxContains": 1
+              }
+            ]
+          }
+        }
+      }
+    }
+  ],
+  "instructions": [
+    "Read inputs/subjects.json and inspect each referenced image.",
+    "Use training/ for the supplied tutorial and field-guide materials.",
+    "Do not use network tools or attempt to retrieve answer keys.",
+    "Report normalized coordinates in [0, 1] relative to the complete 1056 by 816 image.",
+    "Include image F and any other image with no detected white blood cells using an empty detections array."
+  ]
+}
