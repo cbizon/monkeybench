@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import math
-from collections import Counter
 from typing import Any
 
 from monkeybench.matching import match_points
@@ -14,15 +13,6 @@ CELL_TYPES = (
     "eosinophil",
     "basophil",
 )
-
-
-def _ratio(numerator: int, denominator: int) -> float:
-    return numerator / denominator if denominator else 0.0
-
-
-def _f1(true_positives: int, predicted: int, expected: int) -> float:
-    denominator = predicted + expected
-    return 2 * true_positives / denominator if denominator else 1.0
 
 
 def _index_images(
@@ -79,17 +69,19 @@ def score_submission(
         )
 
     tolerance_px = float(expected["matching_tolerance_px"])
-    total_predictions = 0
-    total_references = 0
-    total_matches = 0
-    correct_types = 0
-    exact_count_images = 0
-    no_wbc_images = 0
-    correct_no_wbc_images = 0
-    localization_distances = []
-    predicted_by_type: Counter[str] = Counter()
-    expected_by_type: Counter[str] = Counter()
-    correct_by_type: Counter[str] = Counter()
+    localization_totals = {
+        "true_positives": 0,
+        "false_positives": 0,
+        "false_negatives": 0,
+    }
+    localization_by_image = {}
+    typing_correct = 0
+    confusion_counts = {
+        correct_type: {
+            assigned_type: 0 for assigned_type in CELL_TYPES
+        }
+        for correct_type in CELL_TYPES
+    }
     image_diagnostics = []
 
     for image_id in sorted(expected_images):
@@ -109,16 +101,18 @@ def score_submission(
         matched_predictions = {match[0] for match in matches}
         matched_references = {match[1] for match in matches}
         typed_matches = []
+        image_typing_correct = 0
         for prediction_index, reference_index, distance in matches:
             prediction = predictions[prediction_index]
             reference = references[reference_index]
             type_correct = (
                 prediction["cell_type"] == reference["cell_type"]
             )
-            correct_types += int(type_correct)
-            if type_correct:
-                correct_by_type[reference["cell_type"]] += 1
-            localization_distances.append(distance)
+            typing_correct += int(type_correct)
+            image_typing_correct += int(type_correct)
+            confusion_counts[reference["cell_type"]][
+                prediction["cell_type"]
+            ] += 1
             typed_matches.append(
                 {
                     "prediction_index": prediction_index,
@@ -130,29 +124,31 @@ def score_submission(
                 }
             )
 
-        total_predictions += len(predictions)
-        total_references += len(references)
-        total_matches += len(matches)
-        exact_count_images += int(len(predictions) == len(references))
-        predicted_by_type.update(
-            prediction["cell_type"] for prediction in predictions
-        )
-        expected_by_type.update(
-            reference["cell_type"] for reference in references
-        )
-        if not references:
-            no_wbc_images += 1
-            correct_no_wbc_images += int(not predictions)
+        localization = {
+            "true_positives": len(matches),
+            "false_positives": len(predictions) - len(matches),
+            "false_negatives": len(references) - len(matches),
+        }
+        localization_by_image[image_id] = localization
+        for name, value in localization.items():
+            localization_totals[name] += value
 
         image_diagnostics.append(
             {
                 "image_id": image_id,
                 "prediction_count": len(predictions),
                 "reference_count": len(references),
-                "localization_matches": len(matches),
-                "correct_types": sum(
-                    match["type_correct"] for match in typed_matches
-                ),
+                "localization": localization,
+                "typing": {
+                    "evaluated_cells": len(matches),
+                    "correct": image_typing_correct,
+                    "incorrect": len(matches) - image_typing_correct,
+                    "accuracy": (
+                        image_typing_correct / len(matches)
+                        if matches
+                        else None
+                    ),
+                },
                 "matches": typed_matches,
                 "unmatched_prediction_indexes": sorted(
                     set(range(len(predictions))) - matched_predictions
@@ -163,77 +159,60 @@ def score_submission(
             }
         )
 
-    localization_precision = _ratio(total_matches, total_predictions)
-    localization_recall = _ratio(total_matches, total_references)
-    localization_f1 = _f1(
-        total_matches,
-        total_predictions,
-        total_references,
-    )
-    typed_precision = _ratio(correct_types, total_predictions)
-    typed_recall = _ratio(correct_types, total_references)
-    typed_f1 = _f1(
-        correct_types,
-        total_predictions,
-        total_references,
-    )
-
-    per_class = {}
-    for cell_type in CELL_TYPES:
-        predicted = predicted_by_type[cell_type]
-        reference = expected_by_type[cell_type]
-        true_positive = correct_by_type[cell_type]
-        per_class[cell_type] = {
-            "reference_count": reference,
-            "prediction_count": predicted,
-            "true_positives": true_positive,
-            "precision": (
-                _ratio(true_positive, predicted) if predicted else None
-            ),
-            "recall": (
-                _ratio(true_positive, reference) if reference else None
-            ),
-            "f1": (
-                _f1(true_positive, predicted, reference)
-                if predicted or reference
-                else None
-            ),
-        }
+    evaluated_cells = localization_totals["true_positives"]
+    correct_type_totals = {
+        correct_type: sum(confusion_counts[correct_type].values())
+        for correct_type in CELL_TYPES
+    }
+    assigned_type_totals = {
+        assigned_type: sum(
+            confusion_counts[correct_type][assigned_type]
+            for correct_type in CELL_TYPES
+        )
+        for assigned_type in CELL_TYPES
+    }
+    confusion_matrix = {
+        "rows": "correct_type",
+        "columns": "assigned_type",
+        "labels": list(CELL_TYPES),
+        "counts": confusion_counts,
+        "correct_type_totals": correct_type_totals,
+        "assigned_type_totals": assigned_type_totals,
+        "total": evaluated_cells,
+    }
 
     metrics = {
-        "overall_score": typed_f1,
-        "localization_precision": localization_precision,
-        "localization_recall": localization_recall,
-        "localization_f1": localization_f1,
-        "type_accuracy_on_localized_cells": _ratio(
-            correct_types,
-            total_matches,
-        ),
-        "typed_precision": typed_precision,
-        "typed_recall": typed_recall,
-        "typed_f1": typed_f1,
-        "exact_count_image_accuracy": _ratio(
-            exact_count_images,
-            len(expected_images),
-        ),
-        "no_wbc_image_accuracy": _ratio(
-            correct_no_wbc_images,
-            no_wbc_images,
-        ),
-        "mean_localization_error_px": (
-            sum(localization_distances) / len(localization_distances)
-            if localization_distances
-            else None
-        ),
-        "per_class": per_class,
+        "localization": {
+            "per_image": localization_by_image,
+            "total": localization_totals,
+        },
+        "typing": {
+            "evaluated_cells": evaluated_cells,
+            "correct": typing_correct,
+            "incorrect": evaluated_cells - typing_correct,
+            "accuracy": (
+                typing_correct / evaluated_cells
+                if evaluated_cells
+                else None
+            ),
+            "confusion_matrix": confusion_matrix,
+        },
     }
     summary = {
-        "prediction_count": total_predictions,
-        "reference_count": total_references,
-        "localized_count": total_matches,
-        "correctly_typed_count": correct_types,
         "image_count": len(expected_images),
-        "exact_count_images": exact_count_images,
+        "prediction_count": sum(
+            len(image["detections"]) for image in observed_images.values()
+        ),
+        "reference_count": sum(
+            len(image["cells"]) for image in expected_images.values()
+        ),
+        "localization": localization_totals,
+        "typing": {
+            "evaluated_cells": evaluated_cells,
+            "correct": typing_correct,
+            "incorrect": evaluated_cells - typing_correct,
+            "accuracy": metrics["typing"]["accuracy"],
+        },
         "matching_tolerance_px": tolerance_px,
     }
     diagnostics = {

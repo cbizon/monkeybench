@@ -16,20 +16,33 @@ def test_perfect_submission_scores_one(
 
     assert summary["prediction_count"] == 50
     assert summary["reference_count"] == 50
-    assert summary["localized_count"] == 50
-    assert summary["correctly_typed_count"] == 50
-    assert metrics["overall_score"] == 1.0
-    assert metrics["localization_f1"] == 1.0
-    assert metrics["type_accuracy_on_localized_cells"] == 1.0
-    assert metrics["no_wbc_image_accuracy"] == 1.0
-    assert metrics["mean_localization_error_px"] == pytest.approx(0.0)
+    assert metrics["localization"]["total"] == {
+        "true_positives": 50,
+        "false_positives": 0,
+        "false_negatives": 0,
+    }
+    assert metrics["localization"]["per_image"]["F"] == {
+        "true_positives": 0,
+        "false_positives": 0,
+        "false_negatives": 0,
+    }
+    assert metrics["typing"]["accuracy"] == 1.0
+    assert metrics["typing"]["correct"] == 50
+    assert metrics["typing"]["incorrect"] == 0
+    assert metrics["typing"]["confusion_matrix"]["total"] == 50
+    assert metrics["typing"]["confusion_matrix"]["counts"]["neutrophil"][
+        "neutrophil"
+    ] == 34
     assert len(diagnostics["images"]) == 14
 
 
-def test_wrong_type_preserves_localization_score(
+def test_wrong_type_preserves_localization_counts_and_updates_confusion_matrix(
     perfect_detections: dict,
     expected_reference: dict,
 ) -> None:
+    correct_type = perfect_detections["images"][0]["detections"][0][
+        "cell_type"
+    ]
     perfect_detections["images"][0]["detections"][0][
         "cell_type"
     ] = "eosinophil"
@@ -39,11 +52,20 @@ def test_wrong_type_preserves_localization_score(
         expected_reference,
     )
 
-    assert summary["localized_count"] == 50
-    assert summary["correctly_typed_count"] == 49
-    assert metrics["localization_f1"] == 1.0
-    assert metrics["typed_f1"] == pytest.approx(0.98)
-    assert metrics["type_accuracy_on_localized_cells"] == pytest.approx(0.98)
+    assert summary["localization"]["true_positives"] == 50
+    assert metrics["localization"]["total"] == {
+        "true_positives": 50,
+        "false_positives": 0,
+        "false_negatives": 0,
+    }
+    assert metrics["typing"]["correct"] == 49
+    assert metrics["typing"]["incorrect"] == 1
+    assert metrics["typing"]["accuracy"] == pytest.approx(0.98)
+    matrix = metrics["typing"]["confusion_matrix"]
+    assert matrix["counts"][correct_type][correct_type] == 33
+    assert matrix["counts"][correct_type]["eosinophil"] == 1
+    assert matrix["correct_type_totals"][correct_type] == 34
+    assert matrix["assigned_type_totals"]["eosinophil"] == 10
 
 
 def test_missed_and_spurious_cells_are_separate_errors(
@@ -61,13 +83,45 @@ def test_missed_and_spurious_cells_are_separate_errors(
     )
 
     assert summary["prediction_count"] == 50
-    assert summary["localized_count"] == 49
-    assert summary["correctly_typed_count"] == 49
-    assert metrics["localization_precision"] == pytest.approx(0.98)
-    assert metrics["localization_recall"] == pytest.approx(0.98)
-    assert metrics["typed_f1"] == pytest.approx(0.98)
-    assert metrics["per_class"]["basophil"]["prediction_count"] == 1
-    assert metrics["per_class"]["basophil"]["reference_count"] == 0
+    assert metrics["localization"]["total"] == {
+        "true_positives": 49,
+        "false_positives": 1,
+        "false_negatives": 1,
+    }
+    assert metrics["localization"]["per_image"]["A"][
+        "false_negatives"
+    ] == 1
+    assert metrics["localization"]["per_image"]["B"][
+        "false_positives"
+    ] == 1
+    assert metrics["typing"]["evaluated_cells"] == 49
+    assert metrics["typing"]["correct"] == 49
+    assert metrics["typing"]["accuracy"] == 1.0
+    matrix = metrics["typing"]["confusion_matrix"]
+    assert matrix["assigned_type_totals"]["basophil"] == 0
+    assert matrix["total"] == 49
+
+
+def test_typing_accuracy_is_unavailable_without_localized_cells(
+    perfect_detections: dict,
+    expected_reference: dict,
+) -> None:
+    for image in perfect_detections["images"]:
+        image["detections"] = []
+
+    _, metrics, _ = score_submission(
+        perfect_detections,
+        expected_reference,
+    )
+
+    assert metrics["localization"]["total"] == {
+        "true_positives": 0,
+        "false_positives": 0,
+        "false_negatives": 50,
+    }
+    assert metrics["typing"]["evaluated_cells"] == 0
+    assert metrics["typing"]["accuracy"] is None
+    assert metrics["typing"]["confusion_matrix"]["total"] == 0
 
 
 def test_score_rejects_duplicate_image_ids(

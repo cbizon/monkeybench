@@ -186,8 +186,10 @@ def test_remote_workload_uses_benchmark_launcher(monkeypatch, tmp_path) -> None:
         "monkeybench.remote_agent",
         "/brunner/trial",
     )
-    assert workload.cpu == "1"
+    assert workload.cpu == "500m"
     assert workload.memory == "4Gi"
+    assert runner.plan.max_parallel == 4
+    assert runner.backend.profile.max_parallel == 4
     assert runner.backend.profile.storage_class_name == "basic"
 
 

@@ -396,14 +396,17 @@ for every labeled WBC. The evaluator should:
 5. Report unmatched predictions as false positives.
 6. Report the cell-type result for every spatially matched pair.
 
-Primary metrics should include:
+Primary metrics are separated by task:
 
-- Localization precision, recall, and F1.
-- Cell-type accuracy on spatially matched detections.
-- Per-class precision, recall, and F1.
-- Joint localization-and-type precision, recall, and F1.
-- Exact image count: images with exactly the correct number of detections.
-- Negative-image accuracy, including the no-WBC subject F.
+- Localization true positives, false positives, and false negatives for every
+  image and for the complete run.
+- Overall cell-type accuracy on spatially matched detections.
+- A correct-type by assigned-type confusion matrix with row and column
+  marginal counts.
+
+There is no combined location-and-type score. Unmatched detections affect only
+localization counts; type accuracy and the confusion matrix use only spatially
+matched cells.
 
 The evaluator should also produce a per-image diagnostic artifact listing
 matches, distances, type errors, false positives, and false negatives. That

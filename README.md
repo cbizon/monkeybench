@@ -16,6 +16,7 @@ basophils. Image F is the no-WBC negative control.
 challenge/                  Candidate-visible images and training material
 reference/                  Withheld answer images and typed point annotations
 resources/                  Source and external-asset checksum manifests
+qualitative/                Benchmark-specific reviewer prompt, rubric, schema
 src/monkeybench/            Brunner definition, evaluator, matching, validation
 output-contract.json        Submission and artifact contract
 scripts/                    Resource fetch and answer-ring extraction tools
@@ -34,8 +35,8 @@ trusted evaluation.
 ## Qualitative Review
 
 The default definition runs only deterministic localization and typing
-evaluation. To add Brunner's standard, non-gating qualitative review, provide
-an explicit fixed reviewer model and select the reviewed definition:
+evaluation. Campaign runs use the reviewed definition with an explicit fixed
+reviewer model:
 
 ```bash
 MONKEYBENCH_REVIEWER_MODEL=<model> \
@@ -47,11 +48,17 @@ MONKEYBENCH_REVIEWER_MODEL=<model> \
   --effort high
 ```
 
-The review runs after deterministic evaluation, including when that
-evaluation fails. Its evidence is deliberately limited to the rendered
-prompt, subject manifest, candidate submission, evaluator diagnostics,
-transcript, timing, usage, and status. It does not duplicate the staged image
-corpus or training video into the isolated reviewer workspace.
+The benchmark-specific review characterizes the transcript, summarizes
+localization performance from per-image and total `TP`/`FP`/`FN`, and
+interprets the typing accuracy and confusion matrix. It is required by the
+reviewed definition and runs after deterministic evaluation, including when
+that evaluation fails.
+
+Its evidence is deliberately limited to deterministic results and diagnostics,
+the rendered prompt, subject manifest, candidate submission, transcript,
+timing, usage, and status. It does not duplicate the staged image corpus or
+training video into the isolated reviewer workspace and does not visually
+re-grade the cells.
 
 ## Local Setup
 
@@ -194,12 +201,13 @@ export BRUNNER_RESOURCE_CACHE="$PWD/.resource-cache"
 export MONKEYBENCH_AGENT_IMAGE=\
 "ghcr.io/cbizon/monkeybench-agent:monkeybench-v1"
 export MONKEYBENCH_K8S_NAMESPACE=bizon
+export MONKEYBENCH_REVIEWER_MODEL=<fixed-codex-reviewer-model>
 
 # Run one isolated Codex canary.
 MONKEYBENCH_TRIAL_IDS=codex-gpt-5-4-low-r01 \
 MONKEYBENCH_MAX_PARALLEL=1 \
 uv run brunner \
-  --benchmark monkeybench.definition \
+  --benchmark monkeybench.definition:build_reviewed_definition \
   campaign-run monkeybench.campaign_codex \
   --poll-seconds 30
 
@@ -207,31 +215,37 @@ uv run brunner \
 MONKEYBENCH_TRIAL_IDS=claude-sonnet-5-low-r01 \
 MONKEYBENCH_MAX_PARALLEL=1 \
 uv run brunner \
-  --benchmark monkeybench.definition \
+  --benchmark monkeybench.definition:build_reviewed_definition \
   campaign-run monkeybench.campaign_claude \
   --poll-seconds 30
 
 # Run the complete campaigns after both canaries pass.
 uv run brunner \
-  --benchmark monkeybench.definition \
+  --benchmark monkeybench.definition:build_reviewed_definition \
   campaign-run monkeybench.campaign_codex \
   --poll-seconds 30
 
 uv run brunner \
-  --benchmark monkeybench.definition \
+  --benchmark monkeybench.definition:build_reviewed_definition \
   campaign-run monkeybench.campaign_claude \
   --poll-seconds 30
 ```
 
-The two campaigns may be run concurrently in separate terminals. Both default
-to two concurrent trials, one CPU, 4 GiB memory, and a 1 GiB `basic` PVC per
-trial.
+The two campaigns may be run concurrently in separate terminals. Brunner
+counts all active Brunner Jobs in the namespace when enforcing the shared
+default cap of four concurrent trials. Each agent Job requests and is limited
+to 500 millicores and 4 GiB memory, with a 1 GiB `basic` PVC per trial. At the
+default cap, agents reserve 2 CPUs and 16 GiB memory in total.
+The fixed qualitative reviewer runs on the orchestrator after each
+deterministic evaluation and uses the local `AZURE_OPENAI_API_KEY`; candidate
+provider credentials remain isolated in their respective agent pods.
 `MONKEYBENCH_TRIAL_IDS` accepts a comma-separated list of exact deterministic
 trial IDs. A selected subset receives its own deterministic state directory,
 so canaries cannot alter the full campaign state.
 Override these with `MONKEYBENCH_MAX_PARALLEL`, `MONKEYBENCH_AGENT_CPU`,
 `MONKEYBENCH_AGENT_MEMORY`, `MONKEYBENCH_TRIAL_STORAGE_SIZE`, and
-`MONKEYBENCH_STORAGE_CLASS`.
+`MONKEYBENCH_STORAGE_CLASS`. `MONKEYBENCH_MAX_PARALLEL` is applied both by the
+campaign scheduler and by Brunner's namespace-level Kubernetes capacity check.
 
 Campaign state and dashboards are written under `campaign-runs/`. A remote
 agent Job continues if the orchestrator disconnects; rerun the same

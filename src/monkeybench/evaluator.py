@@ -7,6 +7,7 @@ from brunner.evaluator import (
     write_evaluation_result,
 )
 
+from monkeybench.evaluation_report import render_evaluation_report
 from monkeybench.scoring import score_submission
 
 
@@ -33,6 +34,11 @@ def main() -> int:
     diagnostics_path.write_text(
         json.dumps(diagnostics, indent=2, sort_keys=True) + "\n"
     )
+    report_path = (
+        evaluation_input.trial_root
+        / "evaluation/detection-typing-report.html"
+    )
+    report_path.write_text(render_evaluation_report(summary, metrics))
     write_evaluation_result(
         evaluation_input,
         status="complete",
@@ -43,7 +49,13 @@ def main() -> int:
                 "path": "evaluation/diagnostics.json",
                 "media_type": "application/json",
                 "title": "Per-image matching diagnostics",
-            }
+            },
+            {
+                "path": "evaluation/detection-typing-report.html",
+                "media_type": "text/html",
+                "title": "Detection and typing evaluation",
+                "primary": True,
+            },
         ],
     )
     return 0

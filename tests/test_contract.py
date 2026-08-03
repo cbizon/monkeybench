@@ -12,10 +12,12 @@ from brunner.errors import ContractError
 from brunner.staging import stage_challenge
 
 from monkeybench.definition import (
+    QUALITATIVE_ROOT,
     QUALITATIVE_REVIEW_EVIDENCE,
     build_definition,
     build_reviewed_definition,
 )
+from monkeybench.remote_agent import DEFAULT_CODEX_BASE_URL
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -66,7 +68,7 @@ def test_container_evaluator_uses_container_python(monkeypatch) -> None:
     )
 
 
-def test_reviewed_definition_uses_brunner_standard_review(
+def test_reviewed_definition_uses_monkeybench_qualitative_review(
     monkeypatch,
 ) -> None:
     monkeypatch.setenv("MONKEYBENCH_REVIEWER_MODEL", "review-model")
@@ -78,19 +80,27 @@ def test_reviewed_definition_uses_brunner_standard_review(
     definition = build_reviewed_definition()
     definition.validate()
 
-    review = definition.qualitative_review
-    assert review is not None
-    assert review.reviewer.provider == "codex"
-    assert review.reviewer.model == "review-model"
-    assert review.reviewer.effort == "high"
-    assert review.reviewer_executable == "/opt/reviewers/codex"
-    assert review.required is False
-    assert review.run_if_evaluation_failed is True
-    assert review.trial_evidence_paths == QUALITATIVE_REVIEW_EVIDENCE
-    assert "workspace" not in review.trial_evidence_paths
-    assessment = definition.resolved_assessments()[0]
+    assert definition.qualitative_review is None
+    assert len(definition.assessments) == 1
+    assessment = definition.assessments[0]
     assert assessment.assessment_id == "qualitative-review"
+    assert assessment.root == QUALITATIVE_ROOT
+    assert assessment.reviewer is not None
+    assert assessment.reviewer.provider == "codex"
+    assert assessment.reviewer.model == "review-model"
+    assert assessment.reviewer.effort == "high"
+    assert assessment.reviewer.base_url == DEFAULT_CODEX_BASE_URL
+    assert assessment.reviewer.environment_key == "AZURE_OPENAI_API_KEY"
+    assert assessment.reviewer_executable == "/opt/reviewers/codex"
+    assert assessment.required is True
+    assert assessment.run_if_evaluation_failed is True
+    assert assessment.trial_evidence_paths == QUALITATIVE_REVIEW_EVIDENCE
+    assert "workspace" not in assessment.trial_evidence_paths
+    assert "evaluation/results.json" in assessment.trial_evidence_paths
     assert assessment.portable_command_paths is True
+    assert assessment.reports[0].path == (
+        "evaluation/qualitative-review.html"
+    )
 
 
 def test_reviewed_definition_requires_explicit_model(monkeypatch) -> None:

@@ -80,18 +80,31 @@ accepts a point placed within the approximately 25-pixel answer ring while
 remaining substantially smaller than the distance between distinct WBC
 centers.
 
-## Initial Metrics
+## Deterministic Metrics
 
-- Localization precision, recall, and F1.
-- Type accuracy among spatially matched cells.
-- Joint localization-and-type precision, recall, and F1.
-- Per-class precision, recall, and F1.
-- Exact count accuracy by image.
-- Accuracy on the no-WBC image.
+Localization and typing are reported independently.
 
-The primary `overall_score` is joint localization-and-type F1. A localized
-cell with the wrong type contributes to localization metrics but not to the
-joint true-positive count. The evaluator also emits
+For localization, the evaluator reports per-image and total:
+
+- True positives: one-to-one spatial matches within the tolerance.
+- False positives: unmatched predicted points.
+- False negatives: unmatched reference cells.
+
+For typing, only spatially matched cells are evaluated. The evaluator reports:
+
+- The number of matched cells evaluated.
+- Correct and incorrect type counts.
+- Overall typing accuracy.
+- A confusion matrix whose rows are correct/reference types and whose columns
+  are assigned types.
+- Correct-type row marginals and assigned-type column marginals.
+
+There is no combined localization-and-typing score. A wrong type does not
+change localization counts, and a missed or spurious location does not enter
+the typing confusion matrix.
+
+The evaluator emits `evaluation/detection-typing-report.html` with the
+per-image localization table and confusion matrix. It also emits
 `evaluation/diagnostics.json` with every matched pair, pixel distance, type
 comparison, and unmatched prediction/reference index.
 
@@ -129,13 +142,14 @@ version, not hidden sampling behavior.
 
 ## Qualitative Review
 
-`monkeybench.definition:build_reviewed_definition` enables Brunner's packaged
-standard qualitative review when `MONKEYBENCH_REVIEWER_MODEL` is set. The
-review is non-gating and complements rather than replaces the deterministic
-localization and typing metrics.
+`monkeybench.definition:build_reviewed_definition` enables the
+benchmark-specific qualitative assessment when `MONKEYBENCH_REVIEWER_MODEL`
+is set. The assessment is required in that definition and complements rather
+than replaces the deterministic localization and typing metrics.
 
 The reviewed definition narrows `trial_evidence_paths` to the prompt, subject
-manifest, submission, evaluator diagnostics, transcript, timing, usage, and
-status. This gives the reviewer the task, measured outcome, and observable
-process without copying the candidate image corpus or materialized video into
-the isolated assessment workspace.
+manifest, submission, deterministic results and diagnostics, transcript,
+timing, usage, and status. The reviewer characterizes the observed workflow,
+localization error pattern, typing confusion pattern, and class marginals. It
+does not receive the candidate image corpus or materialized video and cannot
+visually re-grade the cells.

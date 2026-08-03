@@ -1,0 +1,289 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://monkeybench.dev/schemas/qualitative-review.schema.json",
+  "title": "Monkeybench qualitative review",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "rubric_version",
+    "transcript_characterization",
+    "localization_characterization",
+    "typing_characterization",
+    "overall",
+    "review_limitations"
+  ],
+  "properties": {
+    "schema_version": {
+      "type": "string",
+      "const": "1.0"
+    },
+    "rubric_version": {
+      "type": "string",
+      "const": "1.0"
+    },
+    "transcript_characterization": {
+      "$ref": "#/$defs/transcriptCharacterization"
+    },
+    "localization_characterization": {
+      "$ref": "#/$defs/performanceCharacterization"
+    },
+    "typing_characterization": {
+      "$ref": "#/$defs/typingCharacterization"
+    },
+    "overall": {
+      "$ref": "#/$defs/overall"
+    },
+    "review_limitations": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    }
+  },
+  "$defs": {
+    "evidence": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "source",
+        "path",
+        "finding"
+      ],
+      "properties": {
+        "source": {
+          "type": "string",
+          "enum": [
+            "deterministic_evaluation",
+            "transcript",
+            "submission",
+            "prompt",
+            "timing",
+            "usage",
+            "status",
+            "other"
+          ]
+        },
+        "path": {
+          "type": "string",
+          "minLength": 1
+        },
+        "finding": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    "performanceLevel": {
+      "type": "string",
+      "enum": [
+        "perfect",
+        "strong",
+        "mixed",
+        "weak",
+        "failed",
+        "unavailable"
+      ]
+    },
+    "transcriptCharacterization": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "approach",
+        "summary",
+        "training_material_use",
+        "image_inspection_strategy",
+        "typing_strategy",
+        "notable_actions",
+        "failures_or_retries",
+        "evidence"
+      ],
+      "properties": {
+        "approach": {
+          "type": "string",
+          "enum": [
+            "direct_visual_inspection",
+            "tool_assisted_visual_inspection",
+            "automated_image_analysis",
+            "hybrid",
+            "uncertain"
+          ]
+        },
+        "summary": {
+          "type": "string",
+          "minLength": 1
+        },
+        "training_material_use": {
+          "type": "string",
+          "minLength": 1
+        },
+        "image_inspection_strategy": {
+          "type": "string",
+          "minLength": 1
+        },
+        "typing_strategy": {
+          "type": "string",
+          "minLength": 1
+        },
+        "notable_actions": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "failures_or_retries": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "evidence": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "$ref": "#/$defs/evidence"
+          }
+        }
+      }
+    },
+    "performanceCharacterization": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "performance",
+        "summary",
+        "error_distribution",
+        "evidence"
+      ],
+      "properties": {
+        "performance": {
+          "$ref": "#/$defs/performanceLevel"
+        },
+        "summary": {
+          "type": "string",
+          "minLength": 1
+        },
+        "error_distribution": {
+          "type": "string",
+          "minLength": 1
+        },
+        "evidence": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "$ref": "#/$defs/evidence"
+          }
+        }
+      }
+    },
+    "notableConfusion": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "correct_type",
+        "assigned_type",
+        "count",
+        "interpretation"
+      ],
+      "properties": {
+        "correct_type": {
+          "type": "string",
+          "enum": [
+            "neutrophil",
+            "lymphocyte",
+            "monocyte",
+            "eosinophil",
+            "basophil"
+          ]
+        },
+        "assigned_type": {
+          "type": "string",
+          "enum": [
+            "neutrophil",
+            "lymphocyte",
+            "monocyte",
+            "eosinophil",
+            "basophil"
+          ]
+        },
+        "count": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "interpretation": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    "typingCharacterization": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "performance",
+        "summary",
+        "confusion_summary",
+        "marginal_summary",
+        "notable_confusions",
+        "evidence"
+      ],
+      "properties": {
+        "performance": {
+          "$ref": "#/$defs/performanceLevel"
+        },
+        "summary": {
+          "type": "string",
+          "minLength": 1
+        },
+        "confusion_summary": {
+          "type": "string",
+          "minLength": 1
+        },
+        "marginal_summary": {
+          "type": "string",
+          "minLength": 1
+        },
+        "notable_confusions": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/notableConfusion"
+          }
+        },
+        "evidence": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "$ref": "#/$defs/evidence"
+          }
+        }
+      }
+    },
+    "overall": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "bottom_line",
+        "strengths",
+        "weaknesses"
+      ],
+      "properties": {
+        "bottom_line": {
+          "type": "string",
+          "minLength": 1
+        },
+        "strengths": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "weaknesses": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    }
+  }
+}

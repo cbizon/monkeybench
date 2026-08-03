@@ -79,14 +79,23 @@ def test_perfect_trial_evaluates_end_to_end(
 
     assert result["status"] == "complete"
     assert result["evaluator_return_code"] == 0
-    assert result["summary"]["correctly_typed_count"] == 50
-    assert result["metrics"]["overall_score"] == 1.0
-    assert result["metrics"]["localization_f1"] == 1.0
+    assert result["summary"]["typing"]["correct"] == 50
+    assert result["metrics"]["localization"]["total"] == {
+        "true_positives": 50,
+        "false_positives": 0,
+        "false_negatives": 0,
+    }
+    assert result["metrics"]["typing"]["accuracy"] == 1.0
     assert (
         result["submission"]["artifacts"][0]["artifact_id"]
         == "cell-detections"
     )
     assert (trial / "evaluation/diagnostics.json").is_file()
+    report = trial / "evaluation/detection-typing-report.html"
+    assert report.is_file()
+    report_text = report.read_text()
+    assert "Confusion matrix" in report_text
+    assert "True positives" in report_text
     assert (trial / "evaluation/run-report.html").is_file()
 
 
@@ -130,4 +139,7 @@ def test_evaluator_main_uses_brunner_environment(
 
     result = json.loads(results_path.read_text())
     assert result["status"] == "complete"
-    assert result["metrics"]["overall_score"] == 1.0
+    assert result["metrics"]["typing"]["accuracy"] == 1.0
+    assert result["metrics"]["localization"]["total"][
+        "true_positives"
+    ] == 50
