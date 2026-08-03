@@ -206,9 +206,11 @@ uv run brunner \
 ```
 
 The two campaigns may be run concurrently in separate terminals. Both default
-to two concurrent trials, one CPU, 4 GiB memory, and a 1 GiB PVC per trial.
+to two concurrent trials, one CPU, 4 GiB memory, and a 1 GiB `basic` PVC per
+trial.
 Override these with `MONKEYBENCH_MAX_PARALLEL`, `MONKEYBENCH_AGENT_CPU`,
-`MONKEYBENCH_AGENT_MEMORY`, and `MONKEYBENCH_TRIAL_STORAGE_SIZE`.
+`MONKEYBENCH_AGENT_MEMORY`, `MONKEYBENCH_TRIAL_STORAGE_SIZE`, and
+`MONKEYBENCH_STORAGE_CLASS`.
 
 Campaign state and dashboards are written under `campaign-runs/`. A remote
 agent Job continues if the orchestrator disconnects; rerun the same

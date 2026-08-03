@@ -26,6 +26,7 @@ DEFAULT_NAMESPACE = "bizon"
 DEFAULT_AGENT_CPU = "1"
 DEFAULT_AGENT_MEMORY = "4Gi"
 DEFAULT_STORAGE_SIZE = "1Gi"
+DEFAULT_STORAGE_CLASS = "basic"
 DEFAULT_MAX_PARALLEL = 2
 BENCHMARK_UID = 1000
 BENCHMARK_GID = 1000
@@ -216,7 +217,11 @@ def build_kubernetes_campaign(
             DEFAULT_STORAGE_SIZE,
         ),
         storage_class_name=(
-            os.environ.get("MONKEYBENCH_STORAGE_CLASS") or None
+            os.environ.get(
+                "MONKEYBENCH_STORAGE_CLASS",
+                DEFAULT_STORAGE_CLASS,
+            )
+            or None
         ),
         image_pull_secrets=_image_pull_secrets(),
         secret_environment={
