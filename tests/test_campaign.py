@@ -14,11 +14,11 @@ from monkeybench.codex_wrapper import (
     prepare_arguments as prepare_codex_arguments,
     strict_output_schema,
 )
-from monkeybench.campaign_claude import build_campaign as build_claude_campaign
-from monkeybench.campaign_codex import build_campaign as build_codex_campaign
+from monkeybench.campaign import build_campaign
 from monkeybench.campaign_matrix import (
     CLAUDE_MATRIX,
     CODEX_MATRIX,
+    build_campaign_trials,
     build_trials,
     harden_kubernetes_manifest,
     select_trials,
@@ -66,10 +66,7 @@ def test_matrix_matches_granular_benchmark_without_fable() -> None:
 
 
 def test_campaign_trial_ids_are_unique() -> None:
-    trials = (
-        *build_trials("codex", CODEX_MATRIX),
-        *build_trials("claude", CLAUDE_MATRIX),
-    )
+    trials = build_campaign_trials()
     assert len(trials) == 16
     assert len({trial.test_id for trial in trials}) == len(trials)
     assert len(
@@ -123,19 +120,19 @@ def test_trial_subset_uses_separate_campaign_state(
     definition = build_definition()
     contract = load_output_contract(definition.contract_path)
 
-    runner = build_codex_campaign(definition, contract)
+    runner = build_campaign(definition, contract)
 
     assert [trial.test_id for trial in runner.plan.trials] == [
         "codex-gpt-5-4-low-r01"
     ]
     assert runner.plan.campaign_id.startswith(
-        "monkey-wbc-codex-subset-"
+        "monkey-wbc-subset-"
     )
     assert runner.plan.root.parent == tmp_path
-    assert runner.plan.root.name.startswith("codex-subset-")
+    assert runner.plan.root.name.startswith("subset-")
 
 
-def test_campaigns_isolate_provider_secrets(monkeypatch) -> None:
+def test_combined_campaign_uses_both_provider_secrets(monkeypatch) -> None:
     monkeypatch.setenv(
         "MONKEYBENCH_AGENT_IMAGE",
         "ghcr.io/cbizon/monkeybench-agent:test",
@@ -143,16 +140,20 @@ def test_campaigns_isolate_provider_secrets(monkeypatch) -> None:
     definition = build_definition()
     contract = load_output_contract(definition.contract_path)
 
-    codex = build_codex_campaign(definition, contract)
-    claude = build_claude_campaign(definition, contract)
+    runner = build_campaign(definition, contract)
 
-    assert codex.backend.profile.secret_environment == {
+    assert len(runner.plan.trials) == 16
+    assert {trial.provider for trial in runner.plan.trials} == {
+        "codex",
+        "claude",
+    }
+    assert runner.plan.campaign_id == "monkey-wbc-model-sweep-v1"
+    assert runner.plan.root.name == "model-sweep-v1"
+    assert runner.backend.profile.secret_environment == {
         "AZURE_OPENAI_API_KEY": (
             "balls-bench-codex-azure",
             "AZURE_OPENAI_API_KEY",
-        )
-    }
-    assert claude.backend.profile.secret_environment == {
+        ),
         "CLAUDE_CODE_OAUTH_TOKEN": (
             "balls-bench-claude-oauth",
             "CLAUDE_CODE_OAUTH_TOKEN",
@@ -167,7 +168,7 @@ def test_remote_workload_uses_benchmark_launcher(monkeypatch, tmp_path) -> None:
     )
     definition = build_definition()
     contract = load_output_contract(definition.contract_path)
-    runner = build_codex_campaign(definition, contract)
+    runner = build_campaign(definition, contract)
     campaign_trial = runner.plan.trials[0]
     trial = tmp_path / campaign_trial.test_id
     trial.mkdir()
@@ -245,7 +246,7 @@ def test_actual_brunner_manifests_are_hardened(monkeypatch, tmp_path) -> None:
     )
     definition = build_definition()
     contract = load_output_contract(definition.contract_path)
-    runner = build_codex_campaign(definition, contract)
+    runner = build_campaign(definition, contract)
     campaign_trial = runner.plan.trials[0]
     trial = tmp_path / campaign_trial.test_id
     trial.mkdir()
@@ -297,7 +298,11 @@ def test_actual_brunner_manifests_are_hardened(monkeypatch, tmp_path) -> None:
         "AZURE_OPENAI_API_KEY": {
             "name": "balls-bench-codex-azure",
             "key": "AZURE_OPENAI_API_KEY",
-        }
+        },
+        "CLAUDE_CODE_OAUTH_TOKEN": {
+            "name": "balls-bench-claude-oauth",
+            "key": "CLAUDE_CODE_OAUTH_TOKEN",
+        },
     }
 
 

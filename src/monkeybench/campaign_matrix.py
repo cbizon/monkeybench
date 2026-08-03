@@ -136,6 +136,13 @@ def build_trials(
     )
 
 
+def build_campaign_trials() -> tuple[CampaignTrial, ...]:
+    return (
+        *build_trials("codex", CODEX_MATRIX),
+        *build_trials("claude", CLAUDE_MATRIX),
+    )
+
+
 def select_trials(
     trials: tuple[CampaignTrial, ...],
 ) -> tuple[CampaignTrial, ...]:
@@ -228,11 +235,7 @@ def build_kubernetes_campaign(
     definition: BenchmarkDefinition,
     contract: OutputContract,
     *,
-    provider: str,
-    matrix: tuple[tuple[str, str, int], ...],
-    secret_name: str,
-    secret_key: str,
-    environment_name: str,
+    secret_environment: dict[str, tuple[str, str]],
 ) -> CampaignRunner:
     image = _required_environment("MONKEYBENCH_AGENT_IMAGE")
     campaign_root = Path(
@@ -247,12 +250,12 @@ def build_kubernetes_campaign(
             str(DEFAULT_MAX_PARALLEL),
         )
     )
-    all_trials = build_trials(provider, matrix)
+    all_trials = build_campaign_trials()
     trials = select_trials(all_trials)
     variant = _campaign_variant(trials, all_trials)
     plan = CampaignPlan(
-        campaign_id=f"monkey-wbc-{provider}-{variant}",
-        root=campaign_root / f"{provider}-{variant}",
+        campaign_id=f"monkey-wbc-{variant}",
+        root=campaign_root / variant,
         trials=trials,
         max_parallel=max_parallel,
         backend_image=image,
@@ -280,9 +283,7 @@ def build_kubernetes_campaign(
             or None
         ),
         image_pull_secrets=_image_pull_secrets(),
-        secret_environment={
-            environment_name: (secret_name, secret_key),
-        },
+        secret_environment=secret_environment,
         max_parallel=max_parallel,
     )
     return CampaignRunner(
