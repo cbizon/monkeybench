@@ -7,7 +7,10 @@ from brunner.evaluator import (
     write_evaluation_result,
 )
 
-from monkeybench.evaluation_report import render_evaluation_report
+from monkeybench.evaluation_report import (
+    render_detection_report,
+    render_identification_report,
+)
 from monkeybench.scoring import score_submission
 
 
@@ -34,11 +37,32 @@ def main() -> int:
     diagnostics_path.write_text(
         json.dumps(diagnostics, indent=2, sort_keys=True) + "\n"
     )
-    report_path = (
-        evaluation_input.trial_root
-        / "evaluation/detection-typing-report.html"
+    image_paths = {
+        image["image_id"]: (
+            evaluation_input.workspace
+            / "inputs/images"
+            / f"{image['image_id']}.jpg"
+        )
+        for image in expected["images"]
+    }
+    detection_report_path = (
+        evaluation_input.trial_root / "evaluation/detection-report.html"
     )
-    report_path.write_text(render_evaluation_report(summary, metrics))
+    detection_report_path.write_text(
+        render_detection_report(
+            summary,
+            metrics,
+            diagnostics,
+            image_paths,
+        )
+    )
+    identification_report_path = (
+        evaluation_input.trial_root
+        / "evaluation/identification-report.html"
+    )
+    identification_report_path.write_text(
+        render_identification_report(summary, metrics)
+    )
     write_evaluation_result(
         evaluation_input,
         status="complete",
@@ -51,10 +75,15 @@ def main() -> int:
                 "title": "Per-image matching diagnostics",
             },
             {
-                "path": "evaluation/detection-typing-report.html",
+                "path": "evaluation/detection-report.html",
                 "media_type": "text/html",
-                "title": "Detection and typing evaluation",
+                "title": "White blood cell detection",
                 "primary": True,
+            },
+            {
+                "path": "evaluation/identification-report.html",
+                "media_type": "text/html",
+                "title": "White blood cell identification",
             },
         ],
     )
