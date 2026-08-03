@@ -1,6 +1,6 @@
 FROM python:3.12-bookworm AS python-builder
 
-ARG BRUNNER_REF=9d71d2ddd6a8892fd2c60c5cac0f46db8934ff80
+ARG BRUNNER_REF=2e0d26b5865ba5b7671e4faa06d4a8e3b11d51f7
 
 RUN apt-get update \
     && apt-get install -y --no-install-recommends git \

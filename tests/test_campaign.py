@@ -291,6 +291,7 @@ def test_actual_brunner_manifests_are_hardened(monkeypatch, tmp_path) -> None:
         "readOnlyRootFilesystem"
     ] is True
     assert helper["spec"]["securityContext"]["fsGroup"] == 1000
+    assert helper_container["workingDir"] == "/tmp"
     assert helper_container["securityContext"][
         "allowPrivilegeEscalation"
     ] is False
