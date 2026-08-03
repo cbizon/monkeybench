@@ -61,7 +61,8 @@ def test_matrix_matches_granular_benchmark_without_fable() -> None:
     )
     assert all("fable" not in model for model, _, _ in CLAUDE_MATRIX)
     assert sum(count for _, _, count in CODEX_MATRIX) == 10
-    assert sum(count for _, _, count in CLAUDE_MATRIX) == 7
+    assert sum(count for _, _, count in CLAUDE_MATRIX) == 6
+    assert all(count == 1 for _, _, count in CLAUDE_MATRIX)
 
 
 def test_campaign_trial_ids_are_unique() -> None:
@@ -69,8 +70,11 @@ def test_campaign_trial_ids_are_unique() -> None:
         *build_trials("codex", CODEX_MATRIX),
         *build_trials("claude", CLAUDE_MATRIX),
     )
-    assert len(trials) == 17
+    assert len(trials) == 16
     assert len({trial.test_id for trial in trials}) == len(trials)
+    assert len(
+        {(trial.provider, trial.model, trial.effort) for trial in trials}
+    ) == len(trials)
     assert "codex-gpt-5-4-low-r01" in {
         trial.test_id for trial in trials
     }

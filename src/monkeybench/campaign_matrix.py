@@ -50,7 +50,7 @@ CLAUDE_MATRIX = (
     ("claude-opus-5", "low", 1),
     ("claude-opus-4-8", "max", 1),
     ("claude-opus-4-8", "low", 1),
-    ("claude-sonnet-5", "max", 2),
+    ("claude-sonnet-5", "max", 1),
     ("claude-sonnet-5", "low", 1),
 )
 

@@ -115,10 +115,11 @@ matrix with Fable omitted:
 - Codex: `gpt-5.6-sol`, `gpt-5.6-terra`, `gpt-5.6-luna`, `gpt-5.5`, and
   `gpt-5.4`, each at `xhigh` and `low`.
 - Claude: `claude-opus-5` and `claude-opus-4-8` at `max` and `low`;
-  `claude-sonnet-5` at `max` twice and `low` once.
+  `claude-sonnet-5` at `max` and `low`.
 
-The resulting campaign has 17 trials. Campaign trial IDs are deterministic,
-and rerunning either command resumes its existing Brunner state.
+The resulting campaign has 16 unique trials. Campaign trial IDs are
+deterministic, and rerunning either command resumes its existing Brunner
+state.
 
 ### Build the agent image
 
