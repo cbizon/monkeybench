@@ -91,6 +91,12 @@ def test_perfect_trial_evaluates_end_to_end(
         == "cell-detections"
     )
     assert (trial / "evaluation/diagnostics.json").is_file()
+    assert {
+        report["path"] for report in result["reports"]
+    } == {
+        "evaluation/detection-report.html",
+        "evaluation/identification-report.html",
+    }
     detection_report = trial / "evaluation/detection-report.html"
     identification_report = (
         trial / "evaluation/identification-report.html"
@@ -115,6 +121,7 @@ def test_perfect_trial_evaluates_end_to_end(
     assert "Raw timing JSON" in run_report_text
     assert "Raw usage JSON" in run_report_text
     assert "Raw evaluation JSON" in run_report_text
+    assert 'href="diagnostics.json"' not in run_report_text
 
 
 def test_evaluator_main_uses_brunner_environment(

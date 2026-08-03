@@ -70,11 +70,6 @@ def main() -> int:
         metrics=metrics,
         reports=[
             {
-                "path": "evaluation/diagnostics.json",
-                "media_type": "application/json",
-                "title": "Per-image matching diagnostics",
-            },
-            {
                 "path": "evaluation/detection-report.html",
                 "media_type": "text/html",
                 "title": "White blood cell detection",
