@@ -70,7 +70,7 @@ def test_perfect_trial_evaluates_end_to_end(
             test_id="perfect",
             provider="codex",
             model="test-model",
-            effort=None,
+            effort="low",
         ),
     )
     write_submission(trial, perfect_detections)
@@ -91,12 +91,30 @@ def test_perfect_trial_evaluates_end_to_end(
         == "cell-detections"
     )
     assert (trial / "evaluation/diagnostics.json").is_file()
-    report = trial / "evaluation/detection-typing-report.html"
-    assert report.is_file()
-    report_text = report.read_text()
-    assert "Confusion matrix" in report_text
-    assert "True positives" in report_text
-    assert (trial / "evaluation/run-report.html").is_file()
+    detection_report = trial / "evaluation/detection-report.html"
+    identification_report = (
+        trial / "evaluation/identification-report.html"
+    )
+    assert detection_report.is_file()
+    assert identification_report.is_file()
+    detection_text = detection_report.read_text()
+    identification_text = identification_report.read_text()
+    assert "Outcomes by cell type" in detection_text
+    assert "Spatial results" in detection_text
+    assert "data:image/jpeg;base64," in detection_text
+    assert "False positive" in detection_text
+    assert "Confusion matrix" in identification_text
+    assert "Identification errors" in identification_text
+    run_report = trial / "evaluation/run-report.html"
+    assert run_report.is_file()
+    run_report_text = run_report.read_text()
+    assert "<h1>" not in run_report_text
+    assert "Effort<strong>low</strong>" in run_report_text
+    assert "<th>Required</th>" not in run_report_text
+    assert "<details>" in run_report_text
+    assert "Raw timing JSON" in run_report_text
+    assert "Raw usage JSON" in run_report_text
+    assert "Raw evaluation JSON" in run_report_text
 
 
 def test_evaluator_main_uses_brunner_environment(

@@ -90,6 +90,10 @@ For localization, the evaluator reports per-image and total:
 - False positives: unmatched predicted points.
 - False negatives: unmatched reference cells.
 
+It also reports localization outcomes by cell type. True positives and false
+negatives use the known reference type. Because false positives have no
+ground-truth type, they are grouped by the type assigned by the agent.
+
 For typing, only spatially matched cells are evaluated. The evaluator reports:
 
 - The number of matched cells evaluated.
@@ -103,10 +107,23 @@ There is no combined localization-and-typing score. A wrong type does not
 change localization counts, and a missed or spurious location does not enter
 the typing confusion matrix.
 
-The evaluator emits `evaluation/detection-typing-report.html` with the
-per-image localization table and confusion matrix. It also emits
-`evaluation/diagnostics.json` with every matched pair, pixel distance, type
-comparison, and unmatched prediction/reference index.
+The evaluator emits separate reports:
+
+- `evaluation/detection-report.html` contains total, per-image, and
+  per-cell-type localization counts plus each source image overlaid with true
+  positive, false positive, and false negative locations.
+- `evaluation/identification-report.html` contains typing accuracy, the
+  confusion matrix with marginal counts, and the off-diagonal identification
+  errors.
+
+It also emits `evaluation/diagnostics.json` with every matched pair, pixel
+distance, type comparison, unmatched prediction/reference index, and the
+normalized coordinates used by the overlays.
+
+Brunner's generic `evaluation/run-report.html` intentionally has no benchmark
+display title. Its header identifies the run and records provider, model, and
+effort; links to the detection, identification, and qualitative reports follow
+below the compact timing, usage, and evaluation summaries.
 
 ## Fixed Corpus
 

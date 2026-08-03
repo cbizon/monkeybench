@@ -12,6 +12,8 @@ from brunner.errors import ContractError
 from brunner.staging import stage_challenge
 
 from monkeybench.definition import (
+    DEFAULT_REVIEWER_EFFORT,
+    DEFAULT_REVIEWER_MODEL,
     QUALITATIVE_ROOT,
     QUALITATIVE_REVIEW_EVIDENCE,
     build_definition,
@@ -38,6 +40,7 @@ def test_contract_and_definition_validate() -> None:
 
     assert contract.benchmark_id == "monkey-wbc-localization"
     assert contract.work_unit_ids == ("classify-practice-images",)
+    assert definition.display_title is None
     assert definition.evaluation.command[0] == sys.executable
     assert definition.challenge.materialize_command == (
         sys.executable,
@@ -88,7 +91,7 @@ def test_reviewed_definition_uses_monkeybench_qualitative_review(
     assert assessment.reviewer is not None
     assert assessment.reviewer.provider == "codex"
     assert assessment.reviewer.model == "review-model"
-    assert assessment.reviewer.effort == "high"
+    assert assessment.reviewer.effort == "xhigh"
     assert assessment.reviewer.base_url == DEFAULT_CODEX_BASE_URL
     assert assessment.reviewer.environment_key == "AZURE_OPENAI_API_KEY"
     assert assessment.reviewer_executable == "/opt/reviewers/codex"
@@ -97,17 +100,27 @@ def test_reviewed_definition_uses_monkeybench_qualitative_review(
     assert assessment.trial_evidence_paths == QUALITATIVE_REVIEW_EVIDENCE
     assert "workspace" not in assessment.trial_evidence_paths
     assert "evaluation/results.json" in assessment.trial_evidence_paths
+    assert "workspace/training/field-guide.json" in (
+        assessment.trial_evidence_paths
+    )
+    assert "workspace/training/videos/README.md" in (
+        assessment.trial_evidence_paths
+    )
     assert assessment.portable_command_paths is True
     assert assessment.reports[0].path == (
         "evaluation/qualitative-review.html"
     )
 
 
-def test_reviewed_definition_requires_explicit_model(monkeypatch) -> None:
+def test_reviewed_definition_uses_default_reviewer(monkeypatch) -> None:
     monkeypatch.delenv("MONKEYBENCH_REVIEWER_MODEL", raising=False)
+    monkeypatch.delenv("MONKEYBENCH_REVIEWER_EFFORT", raising=False)
 
-    with pytest.raises(RuntimeError, match="MONKEYBENCH_REVIEWER_MODEL"):
-        build_reviewed_definition()
+    assessment = build_reviewed_definition().assessments[0]
+
+    assert assessment.reviewer is not None
+    assert assessment.reviewer.model == DEFAULT_REVIEWER_MODEL
+    assert assessment.reviewer.effort == DEFAULT_REVIEWER_EFFORT
 
 
 def test_artifact_schema_accepts_every_image_once(

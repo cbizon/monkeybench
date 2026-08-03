@@ -74,6 +74,14 @@ def score_submission(
         "false_positives": 0,
         "false_negatives": 0,
     }
+    localization_by_cell_type = {
+        cell_type: {
+            "true_positives": 0,
+            "false_positives": 0,
+            "false_negatives": 0,
+        }
+        for cell_type in CELL_TYPES
+    }
     localization_by_image = {}
     typing_correct = 0
     confusion_counts = {
@@ -101,6 +109,7 @@ def score_submission(
         matched_predictions = {match[0] for match in matches}
         matched_references = {match[1] for match in matches}
         typed_matches = []
+        true_positive_markers = []
         image_typing_correct = 0
         for prediction_index, reference_index, distance in matches:
             prediction = predictions[prediction_index]
@@ -113,6 +122,9 @@ def score_submission(
             confusion_counts[reference["cell_type"]][
                 prediction["cell_type"]
             ] += 1
+            localization_by_cell_type[reference["cell_type"]][
+                "true_positives"
+            ] += 1
             typed_matches.append(
                 {
                     "prediction_index": prediction_index,
@@ -121,6 +133,53 @@ def score_submission(
                     "predicted_type": prediction["cell_type"],
                     "expected_type": reference["cell_type"],
                     "type_correct": type_correct,
+                }
+            )
+            true_positive_markers.append(
+                {
+                    "prediction_index": prediction_index,
+                    "reference_index": reference_index,
+                    "x": prediction["x"],
+                    "y": prediction["y"],
+                    "expected_x": reference["x"],
+                    "expected_y": reference["y"],
+                    "assigned_type": prediction["cell_type"],
+                    "expected_type": reference["cell_type"],
+                    "type_correct": type_correct,
+                }
+            )
+
+        false_positive_markers = []
+        for prediction_index in sorted(
+            set(range(len(predictions))) - matched_predictions
+        ):
+            prediction = predictions[prediction_index]
+            localization_by_cell_type[prediction["cell_type"]][
+                "false_positives"
+            ] += 1
+            false_positive_markers.append(
+                {
+                    "prediction_index": prediction_index,
+                    "x": prediction["x"],
+                    "y": prediction["y"],
+                    "assigned_type": prediction["cell_type"],
+                }
+            )
+
+        false_negative_markers = []
+        for reference_index in sorted(
+            set(range(len(references))) - matched_references
+        ):
+            reference = references[reference_index]
+            localization_by_cell_type[reference["cell_type"]][
+                "false_negatives"
+            ] += 1
+            false_negative_markers.append(
+                {
+                    "reference_index": reference_index,
+                    "x": reference["x"],
+                    "y": reference["y"],
+                    "expected_type": reference["cell_type"],
                 }
             )
 
@@ -150,12 +209,19 @@ def score_submission(
                     ),
                 },
                 "matches": typed_matches,
-                "unmatched_prediction_indexes": sorted(
-                    set(range(len(predictions))) - matched_predictions
-                ),
-                "unmatched_reference_indexes": sorted(
-                    set(range(len(references))) - matched_references
-                ),
+                "markers": {
+                    "true_positives": true_positive_markers,
+                    "false_positives": false_positive_markers,
+                    "false_negatives": false_negative_markers,
+                },
+                "unmatched_prediction_indexes": [
+                    marker["prediction_index"]
+                    for marker in false_positive_markers
+                ],
+                "unmatched_reference_indexes": [
+                    marker["reference_index"]
+                    for marker in false_negative_markers
+                ],
             }
         )
 
@@ -184,6 +250,8 @@ def score_submission(
     metrics = {
         "localization": {
             "per_image": localization_by_image,
+            "per_cell_type": localization_by_cell_type,
+            "false_positive_grouping": "assigned_type",
             "total": localization_totals,
         },
         "typing": {

@@ -28,6 +28,19 @@ Requirements:
 - Distinguish direct transcript observations from interpretation.
 - Ignore candidate provider and model identity when judging performance.
 - Cite evidence for transcript, localization, and typing characterizations.
+- Name the training files or media the transcript shows the agent actually
+  consulting. Distinguish reading training metadata from visually inspecting
+  guides or watching the supplied video. Say explicitly when evidence of use
+  is absent.
+- Describe concrete difficulties, failed tool calls, validation problems, or
+  uncertainty visible in the transcript and what the agent did in response.
+- Write the overall bottom line as a plain-language synthesis rather than a
+  list of metrics. First state roughly what fraction of real cells were found,
+  compare false positives with true positives, and then characterize how
+  accurately the localized cells were typed.
+- Name the important type confusions. When errors concentrate in rarer cell
+  types, say which rare types were assigned to which common types rather than
+  referring vaguely to "leukocytes."
 - If deterministic evaluation failed, characterize the transcript and mark
   unavailable performance sections accordingly.
 - Do not produce a composite qualitative or numerical score.

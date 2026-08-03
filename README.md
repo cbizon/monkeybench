@@ -35,11 +35,13 @@ trusted evaluation.
 ## Qualitative Review
 
 The default definition runs only deterministic localization and typing
-evaluation. Campaign runs use the reviewed definition with an explicit fixed
-reviewer model:
+evaluation. Campaign runs use the reviewed definition, which defaults to
+`gpt-5.6-sol` at `xhigh` effort. Override either value only when deliberately
+testing reviewer behavior:
 
 ```bash
 MONKEYBENCH_REVIEWER_MODEL=<model> \
+MONKEYBENCH_REVIEWER_EFFORT=<effort> \
   uv run brunner \
   --benchmark monkeybench.definition:build_reviewed_definition \
   local-run runs/ \
@@ -149,7 +151,7 @@ unprivileged user namespaces work inside the container.
 
 ```bash
 export GHCR_OWNER=cbizon
-export IMAGE_TAG=monkeybench-v1
+export IMAGE_TAG=brunner-9d71d2d
 export MONKEYBENCH_AGENT_IMAGE=\
 "ghcr.io/$GHCR_OWNER/monkeybench-agent:$IMAGE_TAG"
 
@@ -197,16 +199,18 @@ Populate the external resource cache and use an absolute cache path. Brunner
 materializes the video and transcript into each fresh challenge before it
 creates or uploads the trial. The complete candidate workspace is then copied
 to the trial PVC, where Codex `view_image` and Claude `Read` can inspect the
-mounted images on demand.
+mounted images on demand. Keep `IMAGE_TAG` from the build step above; the old
+`9fe4142` image predates the Brunner report and reviewer-schema fixes.
 
 ```bash
 uv run python scripts/fetch_external_training.py
 
 export BRUNNER_RESOURCE_CACHE="$PWD/.resource-cache"
 export MONKEYBENCH_AGENT_IMAGE=\
-"ghcr.io/cbizon/monkeybench-agent:9fe4142"
+"ghcr.io/cbizon/monkeybench-agent:$IMAGE_TAG"
 export MONKEYBENCH_K8S_NAMESPACE=bizon
-export MONKEYBENCH_REVIEWER_MODEL=gpt-5.4
+export MONKEYBENCH_REVIEWER_MODEL=gpt-5.6-sol
+export MONKEYBENCH_REVIEWER_EFFORT=xhigh
 
 # Run one Codex and one Claude canary in an isolated subset campaign.
 MONKEYBENCH_TRIAL_IDS=codex-gpt-5-4-low-r01,claude-sonnet-5-low-r01 \

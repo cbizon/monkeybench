@@ -110,6 +110,17 @@ assert Path("contract/RUBRIC.md").is_file()
 assert Path("contract/reviewer-prompt.md").is_file()
 assert Path("review-input.json").is_file()
 arguments = sys.argv[1:]
+schema_path = Path(arguments[arguments.index("--output-schema") + 1])
+schema = json.loads(schema_path.read_text())
+assert schema["type"] == "object"
+assert schema["properties"]["transcript_characterization"]["$ref"] == (
+    "#/$defs/transcriptCharacterization"
+)
+assert "transcriptCharacterization" in schema["$defs"]
+assert "performanceCharacterization" in schema["$defs"]
+assert "typingCharacterization" in schema["$defs"]
+assert "overall" in schema["$defs"]
+assert "brunnerAssessmentCommon" not in schema["$defs"]
 output = Path(arguments[arguments.index("--output-last-message") + 1])
 result = json.loads({encoded!r})
 output.write_text(json.dumps(result))
@@ -154,9 +165,11 @@ def test_qualitative_renderer_writes_escaped_html(tmp_path: Path) -> None:
     rendered = (evaluation / "qualitative-review.html").read_text()
     assert "<script>" not in rendered
     assert "&lt;script&gt;" in rendered
-    assert "Transcript characterization" in rendered
-    assert "Localization performance" in rendered
-    assert "Typing performance" in rendered
+    assert "Transcript review" in rendered
+    assert "Training materials reviewed" in rendered
+    assert "Difficulties and adaptations" in rendered
+    assert "Detection performance" in rendered
+    assert "Identification performance" in rendered
 
 
 def test_reviewed_trial_runs_custom_qualitative_assessment(

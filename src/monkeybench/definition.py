@@ -26,9 +26,15 @@ from monkeybench.remote_agent import (
 
 ROOT = Path(__file__).resolve().parents[2]
 QUALITATIVE_ROOT = ROOT / "qualitative"
+DEFAULT_REVIEWER_MODEL = "gpt-5.6-sol"
+DEFAULT_REVIEWER_EFFORT = "xhigh"
 QUALITATIVE_REVIEW_EVIDENCE = (
     "workspace/PROMPT.md",
     "workspace/inputs/subjects.json",
+    "workspace/training/README.md",
+    "workspace/training/field-guide.json",
+    "workspace/training/tutorial.json",
+    "workspace/training/videos/README.md",
     "workspace/submission",
     "evaluation/results.json",
     "evaluation/diagnostics.json",
@@ -91,18 +97,16 @@ def build_definition() -> BenchmarkDefinition:
 
 
 def build_reviewed_definition() -> BenchmarkDefinition:
-    reviewer_model = os.environ.get("MONKEYBENCH_REVIEWER_MODEL")
-    if not reviewer_model:
-        raise RuntimeError(
-            "MONKEYBENCH_REVIEWER_MODEL is required for the reviewed "
-            "benchmark definition"
-        )
+    reviewer_model = os.environ.get(
+        "MONKEYBENCH_REVIEWER_MODEL",
+        DEFAULT_REVIEWER_MODEL,
+    )
     reviewer_executable = os.environ.get(
         "MONKEYBENCH_REVIEWER_EXECUTABLE"
     )
     reviewer_effort = os.environ.get(
         "MONKEYBENCH_REVIEWER_EFFORT",
-        "high",
+        DEFAULT_REVIEWER_EFFORT,
     )
     qualitative_assessment = AssessmentDefinition(
         assessment_id="qualitative-review",
