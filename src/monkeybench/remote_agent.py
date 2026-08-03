@@ -50,6 +50,14 @@ def provider_settings(identity: TrialIdentity) -> ProviderSettings:
     raise ValueError(f"unsupported provider: {identity.provider}")
 
 
+def provider_executable(identity: TrialIdentity) -> str:
+    if identity.provider == "codex":
+        return "monkeybench-codex"
+    if identity.provider == "claude":
+        return "claude"
+    raise ValueError(f"unsupported provider: {identity.provider}")
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(prog="monkeybench-remote-agent")
     parser.add_argument("trial", type=Path)
@@ -59,11 +67,7 @@ def main() -> int:
     state = run_staged_trial(
         trial,
         provider_settings(identity),
-        executable=(
-            "monkeybench-claude"
-            if identity.provider == "claude"
-            else "monkeybench-codex"
-        ),
+        executable=provider_executable(identity),
     )
     print(json.dumps(state, indent=2))
     return 0

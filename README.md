@@ -140,18 +140,19 @@ per-workload Secret references.
 The agent image contains Brunner, this package's remote launcher, Codex,
 Claude Code, Pillow-compatible Python tooling, ImageMagick, and Poppler. It
 does not contain the challenge images, reference answers, or training video.
-The trial pod is the security boundary: the Codex launcher disables its
-unavailable nested bubblewrap sandbox, while the Claude launcher enables
-Claude Code's weaker nested sandbox mode. Generated Sterling Pods and Jobs run
-as UID/GID 1000 with a read-only root filesystem, a writable ephemeral
-`/tmp`, dropped capabilities, and the trial PVC assigned through `fsGroup`.
+The trial pod is the security boundary. The Codex launcher disables its
+unavailable nested bubblewrap sandbox, and Brunner runs Claude with permission
+bypass rather than attempting unsupported nested sandboxing. Generated
+Sterling Pods and Jobs run as UID/GID 1000 with a read-only root filesystem, a
+writable ephemeral `/tmp`, dropped capabilities, and the trial PVC assigned
+through `fsGroup`.
 Set
 `MONKEYBENCH_CODEX_BYPASS_NESTED_SANDBOX=false` only in an environment where
 unprivileged user namespaces work inside the container.
 
 ```bash
 export GHCR_OWNER=cbizon
-export IMAGE_TAG=brunner-2e0d26b
+export IMAGE_TAG=brunner-7f6e540
 export MONKEYBENCH_AGENT_IMAGE=\
 "ghcr.io/$GHCR_OWNER/monkeybench-agent:$IMAGE_TAG"
 
