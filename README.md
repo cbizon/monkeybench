@@ -151,7 +151,7 @@ unprivileged user namespaces work inside the container.
 
 ```bash
 export GHCR_OWNER=cbizon
-export IMAGE_TAG=brunner-9d71d2d
+export IMAGE_TAG=brunner-2e0d26b
 export MONKEYBENCH_AGENT_IMAGE=\
 "ghcr.io/$GHCR_OWNER/monkeybench-agent:$IMAGE_TAG"
 
@@ -199,8 +199,9 @@ Populate the external resource cache and use an absolute cache path. Brunner
 materializes the video and transcript into each fresh challenge before it
 creates or uploads the trial. The complete candidate workspace is then copied
 to the trial PVC, where Codex `view_image` and Claude `Read` can inspect the
-mounted images on demand. Keep `IMAGE_TAG` from the build step above; the old
-`9fe4142` image predates the Brunner report and reviewer-schema fixes.
+mounted images on demand. Keep `IMAGE_TAG` from the build step above;
+`brunner-9d71d2d` predates Brunner's Kubernetes helper working-directory fix
+and cannot stage this image onto a fresh Sterling PVC.
 
 ```bash
 uv run python scripts/fetch_external_training.py
