@@ -5,6 +5,7 @@ from pathlib import Path
 
 import pytest
 
+from brunner.backends.kubernetes import render_helper_pod, render_job
 from brunner.contract import load_output_contract
 from brunner.trial import TrialIdentity
 
@@ -20,6 +21,7 @@ from monkeybench.campaign_matrix import (
     CODEX_MATRIX,
     build_trials,
     harden_kubernetes_manifest,
+    select_trials,
 )
 from monkeybench.definition import build_definition
 from monkeybench.remote_agent import (
@@ -69,6 +71,64 @@ def test_campaign_trial_ids_are_unique() -> None:
     )
     assert len(trials) == 17
     assert len({trial.test_id for trial in trials}) == len(trials)
+    assert "codex-gpt-5-4-low-r01" in {
+        trial.test_id for trial in trials
+    }
+    assert "claude-sonnet-5-low-r01" in {
+        trial.test_id for trial in trials
+    }
+    assert not any(
+        trial.test_id.startswith("claude-claude-") for trial in trials
+    )
+
+
+def test_trial_subset_preserves_requested_order(monkeypatch) -> None:
+    trials = build_trials("codex", CODEX_MATRIX)
+    monkeypatch.setenv(
+        "MONKEYBENCH_TRIAL_IDS",
+        "codex-gpt-5-4-low-r01,codex-gpt-5-6-sol-xhigh-r01",
+    )
+
+    selected = select_trials(trials)
+
+    assert [trial.test_id for trial in selected] == [
+        "codex-gpt-5-4-low-r01",
+        "codex-gpt-5-6-sol-xhigh-r01",
+    ]
+
+
+def test_trial_subset_rejects_unknown_ids(monkeypatch) -> None:
+    monkeypatch.setenv("MONKEYBENCH_TRIAL_IDS", "codex-missing")
+    with pytest.raises(RuntimeError, match="codex-missing"):
+        select_trials(build_trials("codex", CODEX_MATRIX))
+
+
+def test_trial_subset_uses_separate_campaign_state(
+    monkeypatch,
+    tmp_path,
+) -> None:
+    monkeypatch.setenv(
+        "MONKEYBENCH_AGENT_IMAGE",
+        "ghcr.io/cbizon/monkeybench-agent:test",
+    )
+    monkeypatch.setenv(
+        "MONKEYBENCH_TRIAL_IDS",
+        "codex-gpt-5-4-low-r01",
+    )
+    monkeypatch.setenv("MONKEYBENCH_CAMPAIGN_ROOT", str(tmp_path))
+    definition = build_definition()
+    contract = load_output_contract(definition.contract_path)
+
+    runner = build_codex_campaign(definition, contract)
+
+    assert [trial.test_id for trial in runner.plan.trials] == [
+        "codex-gpt-5-4-low-r01"
+    ]
+    assert runner.plan.campaign_id.startswith(
+        "monkey-wbc-codex-subset-"
+    )
+    assert runner.plan.root.parent == tmp_path
+    assert runner.plan.root.name.startswith("codex-subset-")
 
 
 def test_campaigns_isolate_provider_secrets(monkeypatch) -> None:
@@ -169,6 +229,69 @@ def test_kubernetes_manifest_runs_nonroot_with_writable_tmp() -> None:
     assert container["securityContext"]["readOnlyRootFilesystem"] is True
     assert container["securityContext"]["capabilities"] == {
         "drop": ["ALL"]
+    }
+
+
+def test_actual_brunner_manifests_are_hardened(monkeypatch, tmp_path) -> None:
+    monkeypatch.setenv(
+        "MONKEYBENCH_AGENT_IMAGE",
+        "ghcr.io/cbizon/monkeybench-agent:test",
+    )
+    definition = build_definition()
+    contract = load_output_contract(definition.contract_path)
+    runner = build_codex_campaign(definition, contract)
+    campaign_trial = runner.plan.trials[0]
+    trial = tmp_path / campaign_trial.test_id
+    trial.mkdir()
+    workload = runner.workload_factory(
+        trial,
+        campaign_trial,
+        runner.plan,
+        definition,
+        "kubernetes",
+    )
+
+    job = harden_kubernetes_manifest(
+        render_job(
+            "monkeybench-agent",
+            "monkeybench-data",
+            workload,
+            runner.backend.profile,
+            {"app": "monkeybench"},
+        )
+    )
+    helper = harden_kubernetes_manifest(
+        render_helper_pod(
+            "monkeybench-helper",
+            "monkeybench-data",
+            "ghcr.io/cbizon/monkeybench-agent:test",
+            runner.backend.profile,
+            {"app": "monkeybench"},
+        )
+    )
+
+    job_pod = job["spec"]["template"]["spec"]
+    job_container = job_pod["containers"][0]
+    helper_container = helper["spec"]["containers"][0]
+    secret_environment = {
+        item["name"]: item["valueFrom"]["secretKeyRef"]
+        for item in job_container["env"]
+        if "valueFrom" in item
+    }
+
+    assert job_pod["securityContext"]["runAsUser"] == 1000
+    assert job_container["securityContext"][
+        "readOnlyRootFilesystem"
+    ] is True
+    assert helper["spec"]["securityContext"]["fsGroup"] == 1000
+    assert helper_container["securityContext"][
+        "allowPrivilegeEscalation"
+    ] is False
+    assert secret_environment == {
+        "AZURE_OPENAI_API_KEY": {
+            "name": "balls-bench-codex-azure",
+            "key": "AZURE_OPENAI_API_KEY",
+        }
     }
 
 

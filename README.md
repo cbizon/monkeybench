@@ -194,6 +194,23 @@ export MONKEYBENCH_AGENT_IMAGE=\
 "ghcr.io/cbizon/monkeybench-agent:monkeybench-v1"
 export MONKEYBENCH_K8S_NAMESPACE=bizon
 
+# Run one isolated Codex canary.
+MONKEYBENCH_TRIAL_IDS=codex-gpt-5-4-low-r01 \
+MONKEYBENCH_MAX_PARALLEL=1 \
+uv run brunner \
+  --benchmark monkeybench.definition \
+  campaign-run monkeybench.campaign_codex \
+  --poll-seconds 30
+
+# Run one isolated Claude canary.
+MONKEYBENCH_TRIAL_IDS=claude-sonnet-5-low-r01 \
+MONKEYBENCH_MAX_PARALLEL=1 \
+uv run brunner \
+  --benchmark monkeybench.definition \
+  campaign-run monkeybench.campaign_claude \
+  --poll-seconds 30
+
+# Run the complete campaigns after both canaries pass.
 uv run brunner \
   --benchmark monkeybench.definition \
   campaign-run monkeybench.campaign_codex \
@@ -208,6 +225,9 @@ uv run brunner \
 The two campaigns may be run concurrently in separate terminals. Both default
 to two concurrent trials, one CPU, 4 GiB memory, and a 1 GiB `basic` PVC per
 trial.
+`MONKEYBENCH_TRIAL_IDS` accepts a comma-separated list of exact deterministic
+trial IDs. A selected subset receives its own deterministic state directory,
+so canaries cannot alter the full campaign state.
 Override these with `MONKEYBENCH_MAX_PARALLEL`, `MONKEYBENCH_AGENT_CPU`,
 `MONKEYBENCH_AGENT_MEMORY`, `MONKEYBENCH_TRIAL_STORAGE_SIZE`, and
 `MONKEYBENCH_STORAGE_CLASS`.

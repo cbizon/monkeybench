@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import hashlib
 import os
 from copy import deepcopy
 from dataclasses import replace
@@ -108,15 +109,24 @@ def _slug(value: str) -> str:
     return value.lower().replace(".", "-")
 
 
+def _trial_id(
+    provider: str,
+    model: str,
+    effort: str,
+    run_number: int,
+) -> str:
+    model_slug = _slug(model)
+    prefix = "" if model_slug.startswith(f"{provider}-") else f"{provider}-"
+    return f"{prefix}{model_slug}-{effort}-r{run_number:02d}"
+
+
 def build_trials(
     provider: str,
     matrix: tuple[tuple[str, str, int], ...],
 ) -> tuple[CampaignTrial, ...]:
     return tuple(
         CampaignTrial(
-            test_id=(
-                f"{provider}-{_slug(model)}-{effort}-r{run_number:02d}"
-            ),
+            test_id=_trial_id(provider, model, effort, run_number),
             provider=provider,
             model=model,
             effort=effort,
@@ -124,6 +134,49 @@ def build_trials(
         for model, effort, run_count in matrix
         for run_number in range(1, run_count + 1)
     )
+
+
+def select_trials(
+    trials: tuple[CampaignTrial, ...],
+) -> tuple[CampaignTrial, ...]:
+    raw_selection = os.environ.get("MONKEYBENCH_TRIAL_IDS")
+    if raw_selection is None:
+        return trials
+    requested = tuple(
+        item.strip()
+        for item in raw_selection.split(",")
+        if item.strip()
+    )
+    if not requested:
+        raise RuntimeError(
+            "MONKEYBENCH_TRIAL_IDS must contain at least one trial ID"
+        )
+    if len(set(requested)) != len(requested):
+        raise RuntimeError(
+            "MONKEYBENCH_TRIAL_IDS contains duplicate trial IDs"
+        )
+
+    available = {trial.test_id: trial for trial in trials}
+    unknown = tuple(
+        test_id for test_id in requested if test_id not in available
+    )
+    if unknown:
+        raise RuntimeError(
+            "unknown MONKEYBENCH_TRIAL_IDS: " + ", ".join(unknown)
+        )
+    return tuple(available[test_id] for test_id in requested)
+
+
+def _campaign_variant(
+    selected: tuple[CampaignTrial, ...],
+    all_trials: tuple[CampaignTrial, ...],
+) -> str:
+    if selected == all_trials:
+        return "model-sweep-v1"
+    digest = hashlib.sha256(
+        "\n".join(trial.test_id for trial in selected).encode()
+    ).hexdigest()[:12]
+    return f"subset-{digest}"
 
 
 def _image_pull_secrets() -> tuple[str, ...]:
@@ -194,10 +247,13 @@ def build_kubernetes_campaign(
             str(DEFAULT_MAX_PARALLEL),
         )
     )
+    all_trials = build_trials(provider, matrix)
+    trials = select_trials(all_trials)
+    variant = _campaign_variant(trials, all_trials)
     plan = CampaignPlan(
-        campaign_id=f"monkey-wbc-{provider}-model-sweep-v1",
-        root=campaign_root / f"{provider}-model-sweep-v1",
-        trials=build_trials(provider, matrix),
+        campaign_id=f"monkey-wbc-{provider}-{variant}",
+        root=campaign_root / f"{provider}-{variant}",
+        trials=trials,
         max_parallel=max_parallel,
         backend_image=image,
         collection_retry_seconds=60,
