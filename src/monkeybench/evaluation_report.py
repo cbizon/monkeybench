@@ -58,10 +58,16 @@ def _document(title: str, body: str) -> str:
     caption {{ text-align:left; font-weight:bold; margin-bottom:8px; }}
     .legend {{ display:flex; flex-wrap:wrap; gap:16px; margin:18px 0; }}
     .legend span {{ display:inline-flex; align-items:center; gap:7px; }}
-    .swatch {{ width:16px; height:16px; border-radius:50%; display:inline-block; }}
-    .swatch.tp {{ background:var(--tp); }}
-    .swatch.fp {{ background:var(--fp); }}
-    .swatch.fn {{ border:3px solid var(--fn); }}
+    .swatch {{ --marker-color:var(--ink); position:relative; width:17px;
+      height:17px; border:2px solid var(--marker-color); border-radius:50%;
+      display:inline-block; color:var(--marker-color); background:transparent; }}
+    .swatch::before,.swatch::after {{ content:""; position:absolute; left:50%;
+      top:50%; width:7px; height:2px; background:currentColor;
+      transform:translate(-50%,-50%) rotate(45deg); }}
+    .swatch::after {{ transform:translate(-50%,-50%) rotate(-45deg); }}
+    .swatch.tp {{ --marker-color:var(--tp); }}
+    .swatch.fp {{ --marker-color:var(--fp); }}
+    .swatch.fn {{ --marker-color:var(--fn); }}
     .image-grid {{ display:grid; grid-template-columns:repeat(auto-fit,minmax(330px,1fr));
       gap:18px; }}
     .image-card {{ padding:12px; }}
@@ -71,14 +77,20 @@ def _document(title: str, body: str) -> str:
     .image-card small {{ color:var(--muted); }}
     .image-frame {{ position:relative; line-height:0; background:#ddd; overflow:hidden; }}
     .image-frame img {{ width:100%; height:auto; display:block; }}
-    .marker {{ position:absolute; width:24px; height:24px;
-      transform:translate(-50%,-50%); border-radius:50%;
-      display:grid; place-items:center; color:white; font:bold 15px/1 sans-serif;
-      box-shadow:0 0 0 2px rgba(255,255,255,.92),0 2px 7px rgba(0,0,0,.45); }}
-    .marker.tp {{ background:var(--tp); }}
-    .marker.fp {{ background:var(--fp); }}
-    .marker.fn {{ background:rgba(255,255,255,.25); color:#6b3e00;
-      border:4px solid var(--fn); }}
+    .marker {{ --marker-color:var(--ink); position:absolute; width:26px;
+      height:26px; transform:translate(-50%,-50%); border-radius:50%;
+      border:3px solid var(--marker-color); color:var(--marker-color);
+      background:transparent;
+      filter:drop-shadow(0 0 1px rgba(255,255,255,.95))
+        drop-shadow(0 1px 2px rgba(0,0,0,.75)); }}
+    .marker::before,.marker::after {{ content:""; position:absolute; left:50%;
+      top:50%; width:10px; height:2px; background:currentColor;
+      box-shadow:0 0 1px rgba(255,255,255,.95);
+      transform:translate(-50%,-50%) rotate(45deg); }}
+    .marker::after {{ transform:translate(-50%,-50%) rotate(-45deg); }}
+    .marker.tp {{ --marker-color:var(--tp); }}
+    .marker.fp {{ --marker-color:var(--fp); }}
+    .marker.fn {{ --marker-color:var(--fn); }}
     .bars {{ display:grid; gap:15px; margin:18px 0 30px; }}
     .bar-row {{ display:grid; grid-template-columns:110px 1fr; gap:14px; align-items:start; }}
     .bar-label {{ font-weight:bold; padding-top:3px; }}
@@ -115,18 +127,16 @@ def _marker(marker: dict[str, Any], kind: str) -> str:
             f"True positive: expected {marker['expected_type']}, "
             f"assigned {marker['assigned_type']}"
         )
-        label = "✓"
     elif kind == "fp":
         title = f"False positive: assigned {marker['assigned_type']}"
-        label = "×"
     else:
         title = f"False negative: missed {marker['expected_type']}"
-        label = "–"
     return (
         f'<span class="marker {kind}" '
         f'style="left:{float(marker["x"]) * 100:.4f}%;'
         f'top:{float(marker["y"]) * 100:.4f}%" '
-        f'title="{_text(title)}" aria-label="{_text(title)}">{label}</span>'
+        f'title="{_text(title)}" aria-label="{_text(title)}" '
+        'role="img"></span>'
     )
 
 

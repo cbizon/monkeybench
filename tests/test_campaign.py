@@ -9,7 +9,6 @@ from brunner.backends.kubernetes import render_helper_pod, render_job
 from brunner.contract import load_output_contract
 from brunner.trial import TrialIdentity
 
-from monkeybench.claude_wrapper import prepare_arguments
 from monkeybench.codex_wrapper import (
     prepare_arguments as prepare_codex_arguments,
     strict_output_schema,
@@ -26,6 +25,7 @@ from monkeybench.campaign_matrix import (
 from monkeybench.definition import build_definition
 from monkeybench.remote_agent import (
     DEFAULT_CODEX_BASE_URL,
+    provider_executable,
     provider_settings,
 )
 
@@ -322,16 +322,16 @@ def test_remote_agent_configures_azure_codex() -> None:
 
 
 def test_remote_agent_keeps_claude_native() -> None:
-    settings = provider_settings(
-        TrialIdentity(
-            test_id="claude-test",
-            provider="claude",
-            model="claude-opus-5",
-            effort="max",
-        )
+    identity = TrialIdentity(
+        test_id="claude-test",
+        provider="claude",
+        model="claude-opus-5",
+        effort="max",
     )
+    settings = provider_settings(identity)
     assert settings.provider_id is None
     assert settings.base_url is None
+    assert provider_executable(identity) == "claude"
 
 
 def test_codex_wrapper_bypasses_nested_sandbox(monkeypatch) -> None:
@@ -453,20 +453,3 @@ def test_strict_output_schema_closes_nested_required_objects() -> None:
         },
         "additionalProperties": False,
     }
-
-
-def test_claude_wrapper_enables_nested_sandbox(monkeypatch) -> None:
-    monkeypatch.delenv(
-        "MONKEYBENCH_CLAUDE_NESTED_SANDBOX",
-        raising=False,
-    )
-    arguments = prepare_arguments(
-        [
-            "--settings",
-            '{"sandbox":{"enabled":true}}',
-            "--model",
-            "claude-opus-5",
-        ]
-    )
-    settings = json.loads(arguments[1])
-    assert settings["sandbox"]["enableWeakerNestedSandbox"] is True

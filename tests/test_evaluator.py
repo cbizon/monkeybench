@@ -109,6 +109,9 @@ def test_perfect_trial_evaluates_end_to_end(
     assert "Spatial results" in detection_text
     assert "data:image/jpeg;base64," in detection_text
     assert "False positive" in detection_text
+    assert "background:transparent" in detection_text
+    assert ".marker::before,.marker::after" in detection_text
+    assert 'role="img"></span>' in detection_text
     assert "Confusion matrix" in identification_text
     assert "Identification errors" in identification_text
     run_report = trial / "evaluation/run-report.html"
