@@ -152,7 +152,7 @@ unprivileged user namespaces work inside the container.
 
 ```bash
 export GHCR_OWNER=cbizon
-export IMAGE_TAG=brunner-8a7008d
+export IMAGE_TAG=brunner-5c6c586
 export MONKEYBENCH_AGENT_IMAGE=\
 "ghcr.io/$GHCR_OWNER/monkeybench-agent:$IMAGE_TAG"
 
