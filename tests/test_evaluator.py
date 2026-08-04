@@ -106,12 +106,39 @@ def test_perfect_trial_evaluates_end_to_end(
     detection_text = detection_report.read_text()
     identification_text = identification_report.read_text()
     assert "Outcomes by cell type" in detection_text
+    assert "Localization counts by cell type" in detection_text
+    assert '<div class="bars">' not in detection_text
     assert "Spatial results" in detection_text
     assert "data:image/jpeg;base64," in detection_text
     assert "False positive" in detection_text
     assert "background:transparent" in detection_text
     assert ".marker::before,.marker::after" in detection_text
+    assert 'border:2px solid var(--marker-color)' in detection_text
+    assert '<div class="marker-layer">' in detection_text
+    assert (
+        "<th>Cell type</th><th>TP</th><th>FN</th>"
+        in detection_text
+    )
+    assert "have no ground-truth cell type" in detection_text
+    assert "position:sticky" in detection_text
+    assert detection_text.count(
+        '<article class="image-card" data-image-card'
+    ) == 14
+    assert detection_text.count("data-image-card hidden") == 13
+    assert "data-image-prev disabled>Back</button>" in detection_text
+    assert "data-image-next>Next</button>" in detection_text
+    assert "data-image-counter>Image 1 of 14</output>" in detection_text
+    assert 'data-marker-toggle' in detection_text
+    assert (
+        'data-marker-toggle aria-pressed="true">Hide markers</button>'
+        in detection_text
+    )
     assert 'role="img"></span>' in detection_text
+    assert "Accuracy by cell type" in identification_text
+    assert "Typing accuracy among spatially matched cells" in (
+        identification_text
+    )
+    assert "not available" in identification_text
     assert "Confusion matrix" in identification_text
     assert "Identification errors" in identification_text
     run_report = trial / "evaluation/run-report.html"

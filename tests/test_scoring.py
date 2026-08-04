@@ -28,15 +28,23 @@ def test_perfect_submission_scores_one(
     }
     assert metrics["localization"]["per_cell_type"]["neutrophil"] == {
         "true_positives": 34,
-        "false_positives": 0,
         "false_negatives": 0,
     }
-    assert metrics["localization"]["false_positive_grouping"] == (
-        "assigned_type"
-    )
     assert metrics["typing"]["accuracy"] == 1.0
     assert metrics["typing"]["correct"] == 50
     assert metrics["typing"]["incorrect"] == 0
+    assert metrics["typing"]["per_cell_type"]["neutrophil"] == {
+        "evaluated_cells": 34,
+        "correct": 34,
+        "incorrect": 0,
+        "accuracy": 1.0,
+    }
+    assert metrics["typing"]["per_cell_type"]["basophil"] == {
+        "evaluated_cells": 0,
+        "correct": 0,
+        "incorrect": 0,
+        "accuracy": None,
+    }
     assert metrics["typing"]["confusion_matrix"]["total"] == 50
     assert metrics["typing"]["confusion_matrix"]["counts"]["neutrophil"][
         "neutrophil"
@@ -69,6 +77,12 @@ def test_wrong_type_preserves_localization_counts_and_updates_confusion_matrix(
     assert metrics["typing"]["correct"] == 49
     assert metrics["typing"]["incorrect"] == 1
     assert metrics["typing"]["accuracy"] == pytest.approx(0.98)
+    assert metrics["typing"]["per_cell_type"][correct_type] == {
+        "evaluated_cells": 34,
+        "correct": 33,
+        "incorrect": 1,
+        "accuracy": pytest.approx(33 / 34),
+    }
     matrix = metrics["typing"]["confusion_matrix"]
     assert matrix["counts"][correct_type][correct_type] == 33
     assert matrix["counts"][correct_type]["eosinophil"] == 1
@@ -108,9 +122,10 @@ def test_missed_and_spurious_cells_are_separate_errors(
     matrix = metrics["typing"]["confusion_matrix"]
     assert matrix["assigned_type_totals"]["basophil"] == 0
     assert matrix["total"] == 49
-    assert metrics["localization"]["per_cell_type"]["basophil"][
-        "false_positives"
-    ] == 1
+    assert metrics["localization"]["per_cell_type"]["basophil"] == {
+        "true_positives": 0,
+        "false_negatives": 0,
+    }
     diagnostics = score_submission(
         perfect_detections,
         expected_reference,
@@ -145,6 +160,10 @@ def test_typing_accuracy_is_unavailable_without_localized_cells(
     }
     assert metrics["typing"]["evaluated_cells"] == 0
     assert metrics["typing"]["accuracy"] is None
+    assert all(
+        counts["accuracy"] is None
+        for counts in metrics["typing"]["per_cell_type"].values()
+    )
     assert metrics["typing"]["confusion_matrix"]["total"] == 0
 
 
