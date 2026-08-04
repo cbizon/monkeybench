@@ -56,7 +56,11 @@ def _document(title: str, body: str) -> str:
     th {{ background:#e9eee8; }}
     th:first-child {{ text-align:left; }}
     caption {{ text-align:left; font-weight:bold; margin-bottom:8px; }}
-    .legend {{ display:flex; flex-wrap:wrap; gap:16px; margin:18px 0; }}
+    .spatial-toolbar {{ position:sticky; top:0; z-index:10; display:flex;
+      flex-wrap:wrap; justify-content:space-between; align-items:center; gap:14px;
+      margin:18px 0; padding:10px 12px; background:rgba(255,253,247,.96);
+      border:1px solid var(--line); box-shadow:0 3px 10px rgba(23,35,29,.12); }}
+    .legend {{ display:flex; flex-wrap:wrap; gap:16px; }}
     .legend span {{ display:inline-flex; align-items:center; gap:7px; }}
     .swatch {{ --marker-color:var(--ink); position:relative; width:17px;
       height:17px; border:2px solid var(--marker-color); border-radius:50%;
@@ -68,38 +72,39 @@ def _document(title: str, body: str) -> str:
     .swatch.tp {{ --marker-color:var(--tp); }}
     .swatch.fp {{ --marker-color:var(--fp); }}
     .swatch.fn {{ --marker-color:var(--fn); }}
-    .image-grid {{ display:grid; grid-template-columns:repeat(auto-fit,minmax(330px,1fr));
-      gap:18px; }}
-    .image-card {{ padding:12px; }}
+    .viewer-controls {{ display:flex; flex-wrap:wrap; align-items:center; gap:8px; }}
+    .viewer-button {{ border:1px solid var(--accent); background:var(--panel);
+      color:var(--accent); padding:8px 12px; cursor:pointer;
+      font:bold 13px/1.2 "Courier New",monospace; }}
+    .viewer-button:hover:not(:disabled) {{ background:#e4eceb; }}
+    .viewer-button:disabled {{ cursor:not-allowed; opacity:.45; }}
+    .viewer-button:focus-visible {{ outline:3px solid #87a8b7;
+      outline-offset:2px; }}
+    .marker-toggle {{ background:var(--accent); color:white; }}
+    .marker-toggle:hover {{ background:#0f3e50; }}
+    .image-counter {{ min-width:7.6rem; text-align:center;
+      font:bold 13px/1.2 "Courier New",monospace; }}
+    .image-viewer {{ width:100%; }}
+    .image-card {{ padding:16px; }}
+    .image-card[hidden] {{ display:none; }}
     .image-card header {{ display:flex; justify-content:space-between; gap:12px;
       align-items:baseline; margin-bottom:9px; }}
     .image-card h3 {{ margin:0; font-size:1.3rem; }}
     .image-card small {{ color:var(--muted); }}
     .image-frame {{ position:relative; line-height:0; background:#ddd; overflow:hidden; }}
     .image-frame img {{ width:100%; height:auto; display:block; }}
-    .marker {{ --marker-color:var(--ink); position:absolute; width:26px;
-      height:26px; transform:translate(-50%,-50%); border-radius:50%;
-      border:3px solid var(--marker-color); color:var(--marker-color);
-      background:transparent;
-      filter:drop-shadow(0 0 1px rgba(255,255,255,.95))
-        drop-shadow(0 1px 2px rgba(0,0,0,.75)); }}
+    .marker-layer {{ position:absolute; inset:0; }}
+    .marker {{ --marker-color:var(--ink); position:absolute; width:28px;
+      height:28px; transform:translate(-50%,-50%); border-radius:50%;
+      border:2px solid var(--marker-color); color:var(--marker-color);
+      background:transparent; }}
     .marker::before,.marker::after {{ content:""; position:absolute; left:50%;
-      top:50%; width:10px; height:2px; background:currentColor;
-      box-shadow:0 0 1px rgba(255,255,255,.95);
+      top:50%; width:11px; height:2px; background:currentColor;
       transform:translate(-50%,-50%) rotate(45deg); }}
     .marker::after {{ transform:translate(-50%,-50%) rotate(-45deg); }}
     .marker.tp {{ --marker-color:var(--tp); }}
     .marker.fp {{ --marker-color:var(--fp); }}
     .marker.fn {{ --marker-color:var(--fn); }}
-    .bars {{ display:grid; gap:15px; margin:18px 0 30px; }}
-    .bar-row {{ display:grid; grid-template-columns:110px 1fr; gap:14px; align-items:start; }}
-    .bar-label {{ font-weight:bold; padding-top:3px; }}
-    .bar-stack {{ display:grid; gap:5px; }}
-    .bar {{ min-width:2.1rem; width:max(2.1rem,var(--width)); color:white;
-      padding:3px 8px; font:12px/1.3 "Courier New",monospace; }}
-    .bar.tp {{ background:var(--tp); }}
-    .bar.fp {{ background:var(--fp); }}
-    .bar.fn {{ background:var(--fn); color:#2b210f; }}
     .note {{ color:var(--muted); font-size:.93rem; }}
     .matrix td.diagonal {{ background:#dceadf; font-weight:bold; }}
     .matrix td.error {{ background:#f2d8d1; }}
@@ -109,8 +114,10 @@ def _document(title: str, body: str) -> str:
       padding:10px 12px; }}
     @media (max-width:650px) {{
       main {{ padding:32px 13px 60px; }}
-      .image-grid {{ grid-template-columns:1fr; }}
-      .bar-row {{ grid-template-columns:1fr; gap:4px; }}
+      .spatial-toolbar {{ align-items:flex-start; flex-direction:column; }}
+      .viewer-controls {{ width:100%; }}
+      .image-counter {{ flex:1; }}
+      .image-card {{ padding:8px; }}
       table {{ font-size:.82rem; }}
       th,td {{ padding:6px; }}
     }}
@@ -140,38 +147,6 @@ def _marker(marker: dict[str, Any], kind: str) -> str:
     )
 
 
-def _type_bars(per_cell_type: dict[str, dict[str, int]]) -> str:
-    maximum = max(
-        (
-            count
-            for counts in per_cell_type.values()
-            for count in counts.values()
-        ),
-        default=1,
-    )
-    rows = []
-    for cell_type, counts in per_cell_type.items():
-        bars = []
-        for key, label, css_class in (
-            ("true_positives", "TP", "tp"),
-            ("false_positives", "FP", "fp"),
-            ("false_negatives", "FN", "fn"),
-        ):
-            count = counts[key]
-            width = count / maximum * 100 if maximum else 0
-            bars.append(
-                f'<div class="bar {css_class}" style="--width:{width:.2f}%">'
-                f"{label} {count}</div>"
-            )
-        rows.append(
-            '<div class="bar-row">'
-            f'<div class="bar-label">{_text(cell_type)}</div>'
-            f'<div class="bar-stack">{"".join(bars)}</div>'
-            "</div>"
-        )
-    return "".join(rows)
-
-
 def render_detection_report(
     summary: dict[str, Any],
     metrics: dict[str, Any],
@@ -189,8 +164,16 @@ def render_detection_report(
         "</tr>"
         for image_id, counts in localization["per_image"].items()
     )
+    per_cell_type_rows = "".join(
+        "<tr>"
+        f"<th>{_text(cell_type)}</th>"
+        f"<td>{counts['true_positives']}</td>"
+        f"<td>{counts['false_negatives']}</td>"
+        "</tr>"
+        for cell_type, counts in localization["per_cell_type"].items()
+    )
     image_cards = []
-    for image in diagnostics["images"]:
+    for image_index, image in enumerate(diagnostics["images"]):
         image_id = image["image_id"]
         counts = image["localization"]
         markers = image["markers"]
@@ -211,7 +194,8 @@ def render_detection_report(
             ]
         )
         image_cards.append(
-            '<article class="image-card">'
+            '<article class="image-card" data-image-card'
+            f'{" hidden" if image_index else ""}>'
             "<header>"
             f"<h3>Image {_text(image_id)}</h3>"
             f"<small>TP {counts['true_positives']} · "
@@ -221,7 +205,8 @@ def render_detection_report(
             '<div class="image-frame">'
             f'<img src="{_image_data_uri(image_paths[image_id])}" '
             f'alt="Monkey blood-smear image {image_id}">'
-            f"{overlays}</div></article>"
+            f'<div class="marker-layer">{overlays}</div>'
+            "</div></article>"
         )
 
     body = f"""
@@ -236,10 +221,16 @@ Markers show the locations used by the deterministic matcher.</p>
   <div class="fact"><span>False negatives</span><strong>{total['false_negatives']}</strong></div>
 </div>
 <h2>Outcomes by cell type</h2>
-<p class="note">TP and FN are grouped by the known reference type. A false
-positive has no ground-truth type, so FP is grouped by the type assigned by
-the agent.</p>
-<div class="bars">{_type_bars(localization['per_cell_type'])}</div>
+<p class="note">TP and FN are grouped by the known reference type. False
+positives have no ground-truth cell type and are reported in the overall and
+per-image counts instead.</p>
+<table>
+  <caption>Localization counts by cell type</caption>
+  <thead><tr><th>Cell type</th><th>TP</th><th>FN</th></tr></thead>
+  <tbody>{per_cell_type_rows}</tbody>
+  <tfoot><tr><th>Total</th><td>{total['true_positives']}</td>
+    <td>{total['false_negatives']}</td></tr></tfoot>
+</table>
 <table>
   <caption>Localization counts by image</caption>
   <thead><tr><th>Image</th><th>TP</th><th>FP</th><th>FN</th></tr></thead>
@@ -248,14 +239,65 @@ the agent.</p>
     <td>{total['false_positives']}</td><td>{total['false_negatives']}</td></tr></tfoot>
 </table>
 <h2>Spatial results</h2>
-<div class="legend">
-  <span><i class="swatch tp"></i>True positive</span>
-  <span><i class="swatch fp"></i>False positive</span>
-  <span><i class="swatch fn"></i>False negative</span>
+<div class="spatial-toolbar">
+  <div class="legend">
+    <span><i class="swatch tp"></i>True positive</span>
+    <span><i class="swatch fp"></i>False positive</span>
+    <span><i class="swatch fn"></i>False negative</span>
+  </div>
+  <div class="viewer-controls">
+    <button class="viewer-button" type="button" data-image-prev disabled>Back</button>
+    <output class="image-counter" data-image-counter>Image 1 of {len(image_cards)}</output>
+    <button class="viewer-button" type="button" data-image-next>Next</button>
+    <button class="viewer-button marker-toggle" type="button"
+      data-marker-toggle aria-pressed="true">Hide markers</button>
+  </div>
 </div>
-<div class="image-grid">{''.join(image_cards)}</div>
+<div class="image-viewer">{''.join(image_cards)}</div>
 <p class="note">Matches use a {_text(summary['matching_tolerance_px'])}-pixel
 tolerance in the original image. Hover over a marker for type information.</p>
+<script>
+  (() => {{
+    const markerButton = document.querySelector("[data-marker-toggle]");
+    const layers = document.querySelectorAll(".marker-layer");
+    if (markerButton && layers.length) {{
+      markerButton.addEventListener("click", () => {{
+        const visible =
+          markerButton.getAttribute("aria-pressed") === "true";
+        layers.forEach((layer) => {{ layer.hidden = visible; }});
+        markerButton.setAttribute("aria-pressed", String(!visible));
+        markerButton.textContent =
+          visible ? "Show markers" : "Hide markers";
+      }});
+    }}
+
+    const cards = [...document.querySelectorAll("[data-image-card]")];
+    const previousButton = document.querySelector("[data-image-prev]");
+    const nextButton = document.querySelector("[data-image-next]");
+    const counter = document.querySelector("[data-image-counter]");
+    if (!cards.length || !previousButton || !nextButton || !counter) return;
+
+    let activeIndex = 0;
+    const showImage = (index) => {{
+      activeIndex = Math.max(0, Math.min(index, cards.length - 1));
+      cards.forEach((card, cardIndex) => {{
+        card.hidden = cardIndex !== activeIndex;
+      }});
+      previousButton.disabled = activeIndex === 0;
+      nextButton.disabled = activeIndex === cards.length - 1;
+      counter.textContent = `Image ${{activeIndex + 1}} of ${{cards.length}}`;
+    }};
+    previousButton.addEventListener(
+      "click",
+      () => {{ showImage(activeIndex - 1); }},
+    );
+    nextButton.addEventListener(
+      "click",
+      () => {{ showImage(activeIndex + 1); }},
+    );
+    showImage(0);
+  }})();
+</script>
 """
     return _document("White blood cell detection", body)
 
@@ -304,6 +346,16 @@ def render_identification_report(
         if errors
         else "<li>No off-diagonal type errors.</li>"
     )
+    per_cell_type_rows = "".join(
+        "<tr>"
+        f"<th>{_text(cell_type)}</th>"
+        f"<td>{counts['correct']}</td>"
+        f"<td>{counts['incorrect']}</td>"
+        f"<td>{counts['evaluated_cells']}</td>"
+        f"<td>{_accuracy(counts['accuracy'])}</td>"
+        "</tr>"
+        for cell_type, counts in typing["per_cell_type"].items()
+    )
     body = f"""
 <h1>White blood cell identification</h1>
 <p class="lede">Identification is evaluated only for predictions that were
@@ -315,6 +367,16 @@ successfully matched to a reference cell. {typing['evaluated_cells']} of
   <div class="fact"><span>Incorrectly identified</span><strong>{typing['incorrect']}</strong></div>
   <div class="fact"><span>Localized cells evaluated</span><strong>{typing['evaluated_cells']}</strong></div>
 </div>
+<h2>Accuracy by cell type</h2>
+<table>
+  <caption>Typing accuracy among spatially matched cells</caption>
+  <thead><tr><th>Correct type</th><th>Correct</th><th>Incorrect</th>
+    <th>Evaluated</th><th>Accuracy</th></tr></thead>
+  <tbody>{per_cell_type_rows}</tbody>
+  <tfoot><tr><th>Overall</th><td>{typing['correct']}</td>
+    <td>{typing['incorrect']}</td><td>{typing['evaluated_cells']}</td>
+    <td>{_accuracy(typing['accuracy'])}</td></tr></tfoot>
+</table>
 <h2>Confusion matrix</h2>
 <table class="matrix">
   <caption>Rows are correct types; columns are assigned types</caption>

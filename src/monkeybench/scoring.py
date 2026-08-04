@@ -77,7 +77,6 @@ def score_submission(
     localization_by_cell_type = {
         cell_type: {
             "true_positives": 0,
-            "false_positives": 0,
             "false_negatives": 0,
         }
         for cell_type in CELL_TYPES
@@ -154,9 +153,6 @@ def score_submission(
             set(range(len(predictions))) - matched_predictions
         ):
             prediction = predictions[prediction_index]
-            localization_by_cell_type[prediction["cell_type"]][
-                "false_positives"
-            ] += 1
             false_positive_markers.append(
                 {
                     "prediction_index": prediction_index,
@@ -237,6 +233,20 @@ def score_submission(
         )
         for assigned_type in CELL_TYPES
     }
+    typing_by_cell_type = {}
+    for cell_type in CELL_TYPES:
+        type_evaluated_cells = correct_type_totals[cell_type]
+        correct = confusion_counts[cell_type][cell_type]
+        typing_by_cell_type[cell_type] = {
+            "evaluated_cells": type_evaluated_cells,
+            "correct": correct,
+            "incorrect": type_evaluated_cells - correct,
+            "accuracy": (
+                correct / type_evaluated_cells
+                if type_evaluated_cells
+                else None
+            ),
+        }
     confusion_matrix = {
         "rows": "correct_type",
         "columns": "assigned_type",
@@ -251,7 +261,6 @@ def score_submission(
         "localization": {
             "per_image": localization_by_image,
             "per_cell_type": localization_by_cell_type,
-            "false_positive_grouping": "assigned_type",
             "total": localization_totals,
         },
         "typing": {
@@ -263,6 +272,7 @@ def score_submission(
                 if evaluated_cells
                 else None
             ),
+            "per_cell_type": typing_by_cell_type,
             "confusion_matrix": confusion_matrix,
         },
     }
