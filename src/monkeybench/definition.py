@@ -85,7 +85,7 @@ def build_definition() -> BenchmarkDefinition:
             ),
         ),
         runtime=RuntimeDefaults(
-            timeout_seconds=4 * 60 * 60,
+            timeout_seconds=12 * 60 * 60,
             finalization_seconds=10 * 60,
             retry_initial_seconds=15,
             retry_max_seconds=5 * 60,
