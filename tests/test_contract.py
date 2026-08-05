@@ -48,6 +48,7 @@ def test_contract_and_definition_validate() -> None:
         "monkeybench.materialize_challenge",
     )
     assert definition.challenge.materialize_timeout_seconds == 5 * 60
+    assert definition.runtime.timeout_seconds == 12 * 60 * 60
     assert definition.runtime.max_attempts == 10
     assert definition.runtime.max_activity_interval_seconds == 60 * 60
     assert definition.runtime.submission_poll_seconds == 2

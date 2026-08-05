@@ -222,17 +222,19 @@ uv run brunner \
   campaign-run monkeybench.campaign \
   --poll-seconds 30
 
-# Run the complete campaign after both canaries pass.
+# Run or resume the complete campaign after both canaries pass.
+# Monkeybench defaults to one active trial so Claude subscription waits do not
+# consume the same quota concurrently.
 uv run brunner \
   --benchmark monkeybench.definition:build_reviewed_definition \
   campaign-run monkeybench.campaign \
   --poll-seconds 30
 ```
 
-Brunner enforces a default cap of four concurrent trials. Each agent Job
+Monkeybench defaults to one active trial at a time. Each agent Job
 requests and is limited to 500 millicores and 4 GiB memory, with a 1 GiB
-`basic` PVC per trial. At the default cap, agents reserve 2 CPUs and 16 GiB
-memory in total.
+`basic` PVC per trial. The agent runtime limit is 12 hours so a Claude trial
+can remain alive across a subscription reset.
 The fixed qualitative reviewer runs on the orchestrator after each
 deterministic evaluation and uses the local `AZURE_OPENAI_API_KEY`.
 `MONKEYBENCH_TRIAL_IDS` accepts a comma-separated list of exact deterministic
@@ -242,6 +244,8 @@ Override these with `MONKEYBENCH_MAX_PARALLEL`, `MONKEYBENCH_AGENT_CPU`,
 `MONKEYBENCH_AGENT_MEMORY`, `MONKEYBENCH_TRIAL_STORAGE_SIZE`, and
 `MONKEYBENCH_STORAGE_CLASS`. `MONKEYBENCH_MAX_PARALLEL` is applied both by the
 campaign scheduler and by Brunner's namespace-level Kubernetes capacity check.
+Set it above one explicitly for a campaign where concurrent provider use is
+acceptable.
 
 Campaign state and dashboards are written under `campaign-runs/`. A remote
 agent Job continues if the orchestrator disconnects; rerun the same
@@ -259,6 +263,41 @@ uv run python -m http.server 8000 --directory campaign-runs
 ```
 
 Then open `http://localhost:8000/model-sweep-v1/`.
+
+### Analyze campaigns
+
+Collect normalized run, cell-type, and confusion-matrix tables from any
+completed trials currently available under `campaign-runs/`:
+
+```bash
+uv run python scripts/collect_campaign_metrics.py \
+  campaign-runs \
+  --output-dir analysis-output
+
+uv run python scripts/plot_campaign_metrics.py \
+  analysis-output \
+  --output-dir analysis-output/charts
+```
+
+The collector writes `runs.csv`, `cell_types.csv`, `confusion_matrix.csv`, and
+`analysis.json`. Re-running it safely refreshes the tables as additional trials
+are collected. The plotter writes PNG and SVG charts plus
+`analysis-output/charts/index.html`. Detection counts are ranked by true
+positives and identification bars are ranked by accuracy. Separate scatter
+plots compare detection F1 and identification accuracy with total tokens and
+agent-active time. Paired model plots join low and xhigh effort results and
+order models by the absolute performance gap.
+
+`runs.csv` includes detection TP/FP/FN, precision, recall, F1, overall typing
+accuracy, model and effort, Brunner timing partitions, and normalized token
+counts. `cell_types.csv` includes localization recall and typing accuracy for
+each true cell type. False positives are reported only at run level because
+they do not have a known reference cell type.
+
+`inference_time_proxy_seconds` duplicates Brunner's `agent_active_seconds`,
+which is the closest available inference-time proxy. It also includes provider
+latency and orchestration, so it should not be interpreted as pure model
+compute time.
 
 See [docs/monkey-health-explorer-resources.md](docs/monkey-health-explorer-resources.md)
 for the source inventory and
