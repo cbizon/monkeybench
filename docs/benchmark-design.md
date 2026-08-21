@@ -143,26 +143,41 @@ version, not hidden sampling behavior.
 
 ## Brunner Boundary
 
-- `challenge/` is copied to a fresh temporary directory on the orchestrator.
+- The cluster preparation Job copies `challenge/` to a fresh temporary
+  directory on the control PVC.
 - `monkeybench.materialize_challenge` adds the checksum-verified WBC
-  identification video and transcript from `BRUNNER_RESOURCE_CACHE`.
-- The completed materialized challenge is copied into the agent workspace or
-  pod and included in the challenge hash.
+  identification video and transcript from the resource-cache PVC.
+- A resumable in-cluster stager copies the materialized challenge into each
+  candidate trial PVC and verifies its per-file inventory.
 - `output-contract.json` generates the staged submission and artifact schemas.
-- `reference/` is integrity-checked and withheld from the agent.
-- `monkeybench.evaluator` reads only Brunner-validated artifacts and the
-  trusted reference bundle.
+- The reference PVC is mounted read-only only by the trusted evaluator and is
+  verified against the approved manifest digest.
+- Candidate provider credentials are selected per trial. Evaluator,
+  controller, preparation, collection, and publication workloads receive no
+  candidate credentials.
+- Managed Squid and NetworkPolicies limit candidate egress to provider APIs;
+  helper workloads have no egress.
+- `monkeybench.evaluator` runs in the trusted evaluator container and reads
+  only Brunner-validated artifacts plus the mounted reference bundle.
+- The cluster controller owns evaluation finalization, qualitative review,
+  publication, dashboard serving, cleanup, and resumable result retrieval.
+- Pending collection and deterministic evaluation take admission priority over
+  new candidate Jobs, so a newly admitted trial cannot starve evaluation of a
+  completed trial.
+- Claude receives a provider-specific copy of the response schema without the
+  unsupported top-level Draft 2020-12 dialect marker. The canonical staged
+  schema remains unchanged and governs Brunner validation.
 - Browser navigation, the Zooniverse queue, Talk, and button interaction are
   outside the benchmark.
-- Network access is used only by the explicit cache-population command, not by
-  challenge staging or the agent.
+- The agent image contains Brunner and provider CLIs but no Monkeybench source,
+  challenge, reference, or assessment material.
 
 ## Qualitative Review
 
 `monkeybench.definition:build_reviewed_definition` enables the
-benchmark-specific qualitative assessment when `MONKEYBENCH_REVIEWER_MODEL`
-is set. The assessment is required in that definition and complements rather
-than replaces the deterministic localization and typing metrics.
+benchmark-specific qualitative assessment with a fixed `gpt-5.6-sol` reviewer
+at `xhigh` effort. The assessment is required and complements rather than
+replaces the deterministic localization and typing metrics.
 
 The reviewed definition narrows `trial_evidence_paths` to the prompt, subject
 manifest, submission, deterministic results and diagnostics, transcript,

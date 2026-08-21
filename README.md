@@ -20,35 +20,26 @@ qualitative/                Benchmark-specific reviewer prompt, rubric, schema
 src/monkeybench/            Brunner definition, evaluator, matching, validation
 output-contract.json        Submission and artifact contract
 scripts/                    Resource fetch and answer-ring extraction tools
-containers/                 Optional trusted evaluator image
+containers/                 Candidate agent and trusted controller images
+deploy/                     Sterling PVC declarations
 tests/                      Contract, isolation, scoring, and trial tests
 ```
 
-Brunner first copies `challenge/` to a temporary location and runs the
-benchmark materializer there. The materializer adds the task-relevant WBC
-identification video and its English transcript from a checksum-verified
-resource cache. Brunner then copies only that materialized challenge and the
-generated schemas into the agent workspace or pod. It validates
-`reference/manifest.json` separately and makes that bundle available only to
-trusted evaluation.
+Brunner's trusted cluster preparation Job copies `challenge/` to a temporary
+location and runs the benchmark materializer there. The materializer adds the
+task-relevant WBC identification video and its English transcript from a
+checksum-verified resource-cache PVC. Brunner stages only that materialized
+challenge and the generated schemas onto the candidate trial PVC. The
+reference bundle is mounted from a separate read-only PVC only for trusted
+evaluation.
 
 ## Qualitative Review
 
 The default definition runs only deterministic localization and typing
-evaluation. Campaign runs use the reviewed definition, which defaults to
-`gpt-5.6-sol` at `xhigh` effort. Override either value only when deliberately
-testing reviewer behavior:
-
-```bash
-MONKEYBENCH_REVIEWER_MODEL=<model> \
-MONKEYBENCH_REVIEWER_EFFORT=<effort> \
-  uv run brunner \
-  --benchmark monkeybench.definition:build_reviewed_definition \
-  local-run runs/ \
-  --provider codex \
-  --model <candidate-model> \
-  --effort high
-```
+evaluation. Campaigns use the reviewed definition with a fixed
+`gpt-5.6-sol` reviewer at `xhigh` effort. The reviewer identity is intentionally
+deterministic because the cluster controller reloads and verifies the same
+definition after laptop submission.
 
 The benchmark-specific review characterizes the transcript, summarizes
 localization performance from per-image and total `TP`/`FP`/`FN`, and
@@ -78,13 +69,10 @@ To inspect the exact candidate workspace:
 uv run brunner --benchmark monkeybench.definition stage staged/monkeybench
 ```
 
-For Sterling or another orchestrated deployment, pre-populate a persistent
-cache with `scripts/fetch_external_training.py`, set
-`BRUNNER_RESOURCE_CACHE` to that cache root as an absolute path, and run
-Brunner normally. The materializer copies the verified assets into
-`training/videos/` before Brunner hashes and submits the challenge. The video
-is not committed to this repository and does not need to be built into the
-agent image.
+For a local stage, `BRUNNER_RESOURCE_CACHE` may point at `.resource-cache`.
+For Sterling, copy that cache into the `monkeybench-resource-cache` RWX PVC.
+Only the trusted preparation Job mounts it. The video is not committed to this
+repository and is not built into either runtime image.
 
 To refresh upstream resources and rebuild reference integrity metadata:
 
@@ -98,22 +86,6 @@ uv run brunner --benchmark monkeybench.definition reference-build
 used to curate `reference/expected-cells.json`. Cell types remain explicitly
 checked against the answer labels and source metadata.
 
-## Evaluator Image
-
-The optional trusted evaluator image is built from the parent `experiments`
-directory so the local Brunner checkout is available:
-
-```bash
-docker build \
-  -f monkeybench/containers/evaluator.Dockerfile \
-  -t monkeybench-evaluator:1.0.0 \
-  .
-```
-
-Set `MONKEYBENCH_EVALUATOR_IMAGE` to the pushed image name when the evaluator
-should run in a container. Agent pod images and provider/model campaign
-settings remain Brunner deployment configuration and are not hard-coded here.
-
 ## Sterling Campaign
 
 The Sterling campaign uses one shared agent image and one Brunner campaign
@@ -125,153 +97,126 @@ containing both Codex and Claude trials. It reproduces the current
 - Claude: `claude-opus-5` and `claude-opus-4-8` at `max` and `low`;
   `claude-sonnet-5` at `max` and `low`.
 
-The resulting campaign has 16 unique trials. Campaign trial IDs are
-deterministic, and rerunning the command resumes its existing Brunner state.
+The full campaign has 16 deterministic trial IDs and is serialized by default.
+The fixed canary campaign contains `codex-gpt-5-4-low-r01` and
+`claude-sonnet-5-low-r01`. Campaign state is cluster-resident and append-only
+by trial ID.
 
-Brunner currently configures Kubernetes Secret references on the campaign
-profile rather than on individual workloads. Consequently, this combined
-campaign mounts both provider credentials into every agent Job even though
-the launcher uses only the credential for that trial's provider. This is a
-temporary loss of least-privilege isolation until Brunner supports
-per-workload Secret references.
+### Build the images
 
-### Build the agent image
+The agent image contains only Brunner, Codex, Claude Code, and candidate image
+inspection tools. It does not contain Monkeybench source, challenge images,
+reference answers, qualitative materials, or the training video. Current
+Brunner owns provider invocation, schema delivery, retries, transcripts,
+usage, and timing. For Claude, Brunner derives a provider-specific schema that
+omits the unsupported top-level Draft 2020-12 dialect marker while retaining
+the unchanged staged schema as the canonical validation contract.
 
-The agent image contains Brunner, this package's remote launcher, Codex,
-Claude Code, Pillow-compatible Python tooling, ImageMagick, and Poppler. It
-does not contain the challenge images, reference answers, or training video.
-The trial pod is the security boundary. The Codex launcher disables its
-unavailable nested bubblewrap sandbox, and Brunner runs Claude with permission
-bypass rather than attempting unsupported nested sandboxing. Generated
-Sterling Pods and Jobs run as UID/GID 1000 with a read-only root filesystem, a
-writable ephemeral `/tmp`, dropped capabilities, and the trial PVC assigned
-through `fsGroup`.
-Set
-`MONKEYBENCH_CODEX_BYPASS_NESTED_SANDBOX=false` only in an environment where
-unprivileged user namespaces work inside the container.
+The controller image contains Brunner, `kubectl`, Monkeybench, the challenge
+template, the reference manifest, and the fixed qualitative-review runtime.
+It is also used as the trusted evaluator and artifact-reader image. Reference
+answers remain on the separate reference PVC.
 
 ```bash
-export GHCR_OWNER=cbizon
-export IMAGE_TAG=brunner-5c6c586
-export MONKEYBENCH_AGENT_IMAGE=\
-"ghcr.io/$GHCR_OWNER/monkeybench-agent:$IMAGE_TAG"
+export RELEASE=brunner-0994ab5
+export KUBECTL_VERSION=v1.31.9
 
-docker build \
-  --platform linux/amd64 \
+docker buildx build --platform linux/amd64 \
   -f containers/agent.Dockerfile \
-  -t "$MONKEYBENCH_AGENT_IMAGE" \
-  .
-docker push "$MONKEYBENCH_AGENT_IMAGE"
+  -t "ghcr.io/cbizon/monkeybench-agent:$RELEASE" \
+  --push .
+
+docker buildx build --platform linux/amd64 \
+  --build-arg KUBECTL_VERSION="$KUBECTL_VERSION" \
+  -f containers/controller.Dockerfile \
+  -t "ghcr.io/cbizon/monkeybench-controller:$RELEASE" \
+  --push .
 ```
 
-Make the GHCR package public, or set
-`MONKEYBENCH_IMAGE_PULL_SECRETS` to a comma-separated list of Kubernetes
-image-pull Secret names.
+Resolve both pushed digests and use `image@sha256:...` values below. The
+campaign also pins the managed Squid image. Mutable tags are rejected before
+candidate work starts.
 
-### Configure provider Secrets
+### Configure Sterling inputs
 
-The default Secret names and keys match the existing granular benchmark
-deployment:
+The campaign references these existing Secrets:
+
+- `codex-provider-credentials`, key `AZURE_OPENAI_API_KEY`
+- `claude-provider-credentials`, key `CLAUDE_CODE_OAUTH_TOKEN`
+- `registry-credentials`, a Docker registry Secret
+
+Create two RWX `basic` PVCs before submission:
 
 ```bash
-kubectl config use-context bizon@sterling
-
-kubectl --namespace bizon create secret generic \
-  balls-bench-codex-azure \
-  --from-literal=AZURE_OPENAI_API_KEY="$AZURE_OPENAI_API_KEY" \
-  --dry-run=client -o yaml \
-  | kubectl apply -f -
-
-kubectl --namespace bizon create secret generic \
-  balls-bench-claude-oauth \
-  --from-literal=CLAUDE_CODE_OAUTH_TOKEN="$CLAUDE_CODE_OAUTH_TOKEN" \
-  --dry-run=client -o yaml \
-  | kubectl apply -f -
+kubectl apply -f deploy/sterling-storage.yaml
 ```
 
-Override `MONKEYBENCH_CODEX_SECRET`, `MONKEYBENCH_CLAUDE_SECRET`, or their
-corresponding `*_SECRET_KEY` variables if different Secrets are used.
-Codex is configured for RENCI Azure OpenAI by the remote launcher; its base
-URL can be overridden with `MONKEYBENCH_CODEX_BASE_URL`.
+- `monkeybench-reference`: copy the contents of `reference/` to its root.
+- `monkeybench-resource-cache`: copy the contents of `.resource-cache/` to its
+  root after running `scripts/fetch_external_training.py`.
+
+Annotate the reference PVC with the exact manifest-file digest:
+
+```bash
+REFERENCE_SHA256=$(shasum -a 256 reference/manifest.json | awk '{print $1}')
+kubectl --namespace bizon annotate pvc monkeybench-reference \
+  "dev.brunner/reference-manifest-sha256=$REFERENCE_SHA256" \
+  --overwrite
+```
 
 ### Run the campaigns
 
-Populate the external resource cache and use an absolute cache path. Brunner
-materializes the video and transcript into each fresh challenge before it
-creates or uploads the trial. The complete candidate workspace is then copied
-to the trial PVC, where Codex `view_image` and Claude `Read` can inspect the
-mounted images on demand. Keep `IMAGE_TAG` from the build step above;
-`brunner-9d71d2d` predates Brunner's Kubernetes helper working-directory fix
-and cannot stage this image onto a fresh Sterling PVC.
-
 ```bash
-uv run python scripts/fetch_external_training.py
-
-export BRUNNER_RESOURCE_CACHE="$PWD/.resource-cache"
 export MONKEYBENCH_AGENT_IMAGE=\
-"ghcr.io/cbizon/monkeybench-agent:$IMAGE_TAG"
-export MONKEYBENCH_K8S_NAMESPACE=bizon
-export MONKEYBENCH_REVIEWER_MODEL=gpt-5.6-sol
-export MONKEYBENCH_REVIEWER_EFFORT=xhigh
+"ghcr.io/cbizon/monkeybench-agent@sha256:AGENT_DIGEST"
+export MONKEYBENCH_CONTROLLER_IMAGE=\
+"ghcr.io/cbizon/monkeybench-controller@sha256:CONTROLLER_DIGEST"
+export MONKEYBENCH_EVALUATOR_IMAGE="$MONKEYBENCH_CONTROLLER_IMAGE"
 
-# Run one Codex and one Claude canary in an isolated subset campaign.
-MONKEYBENCH_TRIAL_IDS=codex-gpt-5-4-low-r01,claude-sonnet-5-low-r01 \
-MONKEYBENCH_MAX_PARALLEL=2 \
+# Submit the fixed two-provider canary.
 uv run brunner \
   --benchmark monkeybench.definition:build_reviewed_definition \
-  campaign-run monkeybench.campaign \
-  --poll-seconds 30
+  campaign-submit monkeybench.campaign:build_canary_campaign
 
-# Run or resume the complete campaign after both canaries pass.
-# Monkeybench defaults to one active trial so Claude subscription waits do not
-# consume the same quota concurrently.
 uv run brunner \
   --benchmark monkeybench.definition:build_reviewed_definition \
-  campaign-run monkeybench.campaign \
-  --poll-seconds 30
+  campaign-status monkeybench.campaign:build_canary_campaign
+
+uv run brunner \
+  --benchmark monkeybench.definition:build_reviewed_definition \
+  campaign-monitor monkeybench.campaign:build_canary_campaign \
+  --local-port 8766
+
+uv run brunner \
+  --benchmark monkeybench.definition:build_reviewed_definition \
+  campaign-retrieve monkeybench.campaign:build_canary_campaign \
+  ./monkeybench-canary-results
+
+# Submit the full serialized model sweep after the canary passes.
+uv run brunner \
+  --benchmark monkeybench.definition:build_reviewed_definition \
+  campaign-submit monkeybench.campaign
 ```
 
-Monkeybench defaults to one active trial at a time. Each agent Job
-requests and is limited to 500 millicores and 4 GiB memory, with a 1 GiB
-`basic` PVC per trial. The agent runtime limit is 12 hours so a Claude trial
-can remain alive across a subscription reset.
-The fixed qualitative reviewer runs on the orchestrator after each
-deterministic evaluation and uses the local `AZURE_OPENAI_API_KEY`.
-`MONKEYBENCH_TRIAL_IDS` accepts a comma-separated list of exact deterministic
-trial IDs. A selected subset receives its own deterministic state directory,
-so canaries cannot alter the full campaign state.
-Override these with `MONKEYBENCH_MAX_PARALLEL`, `MONKEYBENCH_AGENT_CPU`,
-`MONKEYBENCH_AGENT_MEMORY`, `MONKEYBENCH_TRIAL_STORAGE_SIZE`, and
-`MONKEYBENCH_STORAGE_CLASS`. `MONKEYBENCH_MAX_PARALLEL` is applied both by the
-campaign scheduler and by Brunner's namespace-level Kubernetes capacity check.
-Set it above one explicitly for a campaign where concurrent provider use is
-acceptable.
-
-Campaign state and dashboards are written under `campaign-runs/`. A remote
-agent Job continues if the orchestrator disconnects; rerun the same
-`campaign-run` command to collect, evaluate, and clean up completed work.
-Trusted references stay local to the orchestrator and are never uploaded to
-the agent PVC. Set `MONKEYBENCH_CAMPAIGN_ROOT` to place campaign state
-elsewhere.
-
-The full campaign dashboard is `campaign-runs/model-sweep-v1/index.html`.
-Brunner regenerates it after state transitions but does not serve it. Serve
-the campaign directory locally with:
-
-```bash
-uv run python -m http.server 8000 --directory campaign-runs
-```
-
-Then open `http://localhost:8000/model-sweep-v1/`.
+Each candidate requests 500 millicores and 4 GiB, may burst to 2 CPUs and
+8 GiB, and receives a 2 GiB trial PVC. The runtime limit is 12 hours so a
+Claude trial can survive a subscription reset. The cluster controller owns
+preparation, reconciliation, trusted evaluation, review, publication,
+dashboard serving, and cleanup even when the laptop disconnects.
+When a candidate Job exits, Brunner finishes its collection and deterministic
+evaluation before admitting another candidate. This prevents the next trial
+from consuming resources needed to evaluate the completed one.
+Use `campaign-delete` to remove a campaign control plane; add
+`--delete-results` only when its finalized results PVC should also be removed.
 
 ### Analyze campaigns
 
-Collect normalized run, cell-type, and confusion-matrix tables from any
-completed trials currently available under `campaign-runs/`:
+Collect normalized tables from historical `campaign-runs/` directories or a
+new checksum-verified `campaign-retrieve` destination:
 
 ```bash
 uv run python scripts/collect_campaign_metrics.py \
-  campaign-runs \
+  monkeybench-results \
   --output-dir analysis-output
 
 uv run python scripts/plot_campaign_metrics.py \

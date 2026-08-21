@@ -128,10 +128,12 @@ def discover_trial_roots(inputs: Sequence[Path]) -> list[Path]:
             continue
         if not path.exists():
             raise FileNotFoundError(path)
-        for results_path in path.glob("**/collected/*/evaluation/results.json"):
-            trial_root = results_path.parent.parent
-            if trial_root.parent.name == "collected":
-                roots.add(trial_root.resolve())
+        for layout in ("collected", "trials"):
+            pattern = f"**/{layout}/*/evaluation/results.json"
+            for results_path in path.glob(pattern):
+                trial_root = results_path.parent.parent
+                if trial_root.parent.name == layout:
+                    roots.add(trial_root.resolve())
     return sorted(roots)
 
 

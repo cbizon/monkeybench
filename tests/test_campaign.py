@@ -5,29 +5,34 @@ from pathlib import Path
 
 import pytest
 
-from brunner.backends.kubernetes import render_helper_pod, render_job
-from brunner.contract import load_output_contract
-from brunner.trial import TrialIdentity
-
-from monkeybench.codex_wrapper import (
-    prepare_arguments as prepare_codex_arguments,
-    strict_output_schema,
+from brunner.campaign import default_workload_factory
+from brunner.cluster import (
+    apply_campaign_image_overrides,
+    apply_definition_image_override,
+    campaign_image_environment,
+    definition_image_environment,
+    render_cluster_resources,
 )
-from monkeybench.campaign import build_campaign
+from brunner.contract import load_output_contract
+from brunner.providers import ProviderRunContext, ProviderSettings
+from brunner.providers.claude import ClaudeAdapter
+from brunner.providers.codex import CodexAdapter
+
+from monkeybench.campaign import (
+    build_campaign,
+    build_canary_campaign,
+)
 from monkeybench.campaign_matrix import (
+    CANARY_TRIAL_IDS,
     CLAUDE_MATRIX,
     CODEX_MATRIX,
+    DEFAULT_CODEX_BASE_URL,
+    DEFAULT_CODEX_ENVIRONMENT_KEY,
     build_campaign_trials,
     build_trials,
-    harden_kubernetes_manifest,
     select_trials,
 )
 from monkeybench.definition import build_definition
-from monkeybench.remote_agent import (
-    DEFAULT_CODEX_BASE_URL,
-    provider_executable,
-    provider_settings,
-)
 
 
 EXPECTED_CODEX = {
@@ -50,6 +55,32 @@ EXPECTED_CLAUDE = {
     ("claude-sonnet-5", "max"),
     ("claude-sonnet-5", "low"),
 }
+
+
+def _configure_images(monkeypatch: pytest.MonkeyPatch) -> None:
+    images = {
+        "MONKEYBENCH_AGENT_IMAGE": (
+            "ghcr.io/cbizon/monkeybench-agent@sha256:" + "1" * 64
+        ),
+        "MONKEYBENCH_CONTROLLER_IMAGE": (
+            "ghcr.io/cbizon/monkeybench-controller@sha256:" + "2" * 64
+        ),
+        "MONKEYBENCH_EVALUATOR_IMAGE": (
+            "ghcr.io/cbizon/monkeybench-controller@sha256:" + "3" * 64
+        ),
+        "MONKEYBENCH_SQUID_IMAGE": (
+            "ubuntu/squid@sha256:" + "4" * 64
+        ),
+    }
+    for name, value in images.items():
+        monkeypatch.setenv(name, value)
+
+
+def _campaign(monkeypatch: pytest.MonkeyPatch):
+    _configure_images(monkeypatch)
+    definition = build_definition()
+    contract = load_output_contract(definition.contract_path)
+    return definition, contract, build_campaign(definition, contract)
 
 
 def test_matrix_matches_granular_benchmark_without_fable() -> None:
@@ -83,14 +114,15 @@ def test_campaign_trial_ids_are_unique() -> None:
     )
 
 
-def test_trial_subset_preserves_requested_order(monkeypatch) -> None:
+def test_trial_selection_preserves_requested_order() -> None:
     trials = build_trials("codex", CODEX_MATRIX)
-    monkeypatch.setenv(
-        "MONKEYBENCH_TRIAL_IDS",
-        "codex-gpt-5-4-low-r01,codex-gpt-5-6-sol-xhigh-r01",
+    selected = select_trials(
+        trials,
+        (
+            "codex-gpt-5-4-low-r01",
+            "codex-gpt-5-6-sol-xhigh-r01",
+        ),
     )
-
-    selected = select_trials(trials)
 
     assert [trial.test_id for trial in selected] == [
         "codex-gpt-5-4-low-r01",
@@ -98,358 +130,313 @@ def test_trial_subset_preserves_requested_order(monkeypatch) -> None:
     ]
 
 
-def test_trial_subset_rejects_unknown_ids(monkeypatch) -> None:
-    monkeypatch.setenv("MONKEYBENCH_TRIAL_IDS", "codex-missing")
-    with pytest.raises(RuntimeError, match="codex-missing"):
-        select_trials(build_trials("codex", CODEX_MATRIX))
+def test_trial_selection_rejects_unknown_ids() -> None:
+    with pytest.raises(ValueError, match="codex-missing"):
+        select_trials(
+            build_trials("codex", CODEX_MATRIX),
+            ("codex-missing",),
+        )
 
 
-def test_trial_subset_uses_separate_campaign_state(
-    monkeypatch,
-    tmp_path,
+def test_canary_campaign_is_fixed_and_cluster_reproducible(
+    monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    monkeypatch.setenv(
-        "MONKEYBENCH_AGENT_IMAGE",
-        "ghcr.io/cbizon/monkeybench-agent:test",
-    )
-    monkeypatch.setenv(
-        "MONKEYBENCH_TRIAL_IDS",
-        "codex-gpt-5-4-low-r01",
-    )
-    monkeypatch.setenv("MONKEYBENCH_CAMPAIGN_ROOT", str(tmp_path))
+    _configure_images(monkeypatch)
     definition = build_definition()
     contract = load_output_contract(definition.contract_path)
 
-    runner = build_campaign(definition, contract)
+    campaign = build_canary_campaign(definition, contract)
 
-    assert [trial.test_id for trial in runner.plan.trials] == [
-        "codex-gpt-5-4-low-r01"
-    ]
-    assert runner.plan.campaign_id.startswith(
-        "monkey-wbc-subset-"
+    assert tuple(trial.test_id for trial in campaign.plan.trials) == (
+        CANARY_TRIAL_IDS
     )
-    assert runner.plan.root.parent == tmp_path
-    assert runner.plan.root.name.startswith("subset-")
+    assert campaign.plan.campaign_id == "monkey-wbc-canary-v2"
+    assert campaign.plan.max_parallel == 1
 
 
-def test_combined_campaign_uses_both_provider_secrets(monkeypatch) -> None:
-    monkeypatch.setenv(
-        "MONKEYBENCH_AGENT_IMAGE",
-        "ghcr.io/cbizon/monkeybench-agent:test",
-    )
-    definition = build_definition()
-    contract = load_output_contract(definition.contract_path)
+def test_full_campaign_uses_provider_scoped_secrets(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    _, _, campaign = _campaign(monkeypatch)
 
-    runner = build_campaign(definition, contract)
-
-    assert len(runner.plan.trials) == 16
-    assert {trial.provider for trial in runner.plan.trials} == {
+    assert len(campaign.plan.trials) == 16
+    assert {trial.provider for trial in campaign.plan.trials} == {
         "codex",
         "claude",
     }
-    assert runner.plan.campaign_id == "monkey-wbc-model-sweep-v1"
-    assert runner.plan.root.name == "model-sweep-v1"
-    assert runner.backend.profile.secret_environment == {
-        "AZURE_OPENAI_API_KEY": (
-            "balls-bench-codex-azure",
-            "AZURE_OPENAI_API_KEY",
-        ),
+    assert campaign.plan.campaign_id == "monkey-wbc-model-sweep-v2"
+    assert campaign.plan.provider_secret_environment == {
+        "codex": {
+            "AZURE_OPENAI_API_KEY": (
+                "codex-provider-credentials",
+                "AZURE_OPENAI_API_KEY",
+            )
+        },
+        "claude": {
+            "CLAUDE_CODE_OAUTH_TOKEN": (
+                "claude-provider-credentials",
+                "CLAUDE_CODE_OAUTH_TOKEN",
+            )
+        },
+    }
+    assert campaign.backend.secret_environment == {}
+
+
+def test_default_workload_uses_native_brunner_agent(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+) -> None:
+    definition, _, campaign = _campaign(monkeypatch)
+    codex_trial = next(
+        trial
+        for trial in campaign.plan.trials
+        if trial.provider == "codex"
+    )
+
+    workload = default_workload_factory(
+        tmp_path / codex_trial.test_id,
+        codex_trial,
+        campaign.plan,
+        definition,
+        "kubernetes",
+    )
+
+    assert workload.command[:4] == (
+        "python",
+        "-m",
+        "brunner.agent_cli",
+        "/brunner/trial",
+    )
+    assert "--provider-id" in workload.command
+    assert DEFAULT_CODEX_BASE_URL in workload.command
+    assert workload.cpu_request == "500m"
+    assert workload.cpu_limit == "2"
+    assert workload.memory_request == "4Gi"
+    assert workload.memory_limit == "8Gi"
+    assert workload.secret_environment == {
+        DEFAULT_CODEX_ENVIRONMENT_KEY: (
+            "codex-provider-credentials",
+            DEFAULT_CODEX_ENVIRONMENT_KEY,
+        )
+    }
+
+
+def test_claude_workload_receives_only_claude_credentials(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+) -> None:
+    definition, _, campaign = _campaign(monkeypatch)
+    claude_trial = next(
+        trial
+        for trial in campaign.plan.trials
+        if trial.provider == "claude"
+    )
+
+    workload = default_workload_factory(
+        tmp_path / claude_trial.test_id,
+        claude_trial,
+        campaign.plan,
+        definition,
+        "kubernetes",
+    )
+
+    assert "--provider-id" not in workload.command
+    assert workload.secret_environment == {
         "CLAUDE_CODE_OAUTH_TOKEN": (
-            "balls-bench-claude-oauth",
+            "claude-provider-credentials",
             "CLAUDE_CODE_OAUTH_TOKEN",
         )
     }
 
 
-def test_remote_workload_uses_benchmark_launcher(monkeypatch, tmp_path) -> None:
-    monkeypatch.setenv(
-        "MONKEYBENCH_AGENT_IMAGE",
-        "ghcr.io/cbizon/monkeybench-agent:test",
+def test_codex_connection_is_part_of_trial_identity() -> None:
+    codex = build_trials("codex", CODEX_MATRIX)[0]
+    claude = build_trials("claude", CLAUDE_MATRIX)[0]
+
+    assert codex.provider_id == "azure"
+    assert codex.base_url == DEFAULT_CODEX_BASE_URL
+    assert codex.environment_key == DEFAULT_CODEX_ENVIRONMENT_KEY
+    assert claude.provider_id is None
+    assert claude.base_url is None
+
+
+def test_cluster_profiles_follow_current_brunner_security_boundary(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    definition, _, campaign = _campaign(monkeypatch)
+
+    campaign.validate()
+
+    assert campaign.backend.network_isolation_mode == "controlled-egress"
+    assert campaign.backend.reference_claim_name == "monkeybench-reference"
+    assert campaign.backend.proxy_image.endswith("4" * 64)
+    assert campaign.backend.image_pull_secrets == (
+        "registry-credentials",
     )
-    definition = build_definition()
-    contract = load_output_contract(definition.contract_path)
-    runner = build_campaign(definition, contract)
-    campaign_trial = runner.plan.trials[0]
-    trial = tmp_path / campaign_trial.test_id
-    trial.mkdir()
-
-    workload = runner.workload_factory(
-        trial,
-        campaign_trial,
-        runner.plan,
-        definition,
-        "kubernetes",
+    assert campaign.controller.resource_cache_claim_name == (
+        "monkeybench-resource-cache"
     )
-
-    assert workload.command == (
-        "python",
-        "-m",
-        "monkeybench.remote_agent",
-        "/brunner/trial",
-    )
-    assert workload.cpu == "500m"
-    assert workload.memory == "4Gi"
-    assert runner.plan.max_parallel == 1
-    assert runner.backend.profile.max_parallel == 1
-    assert runner.backend.profile.storage_class_name == "basic"
-
-
-def test_kubernetes_manifest_runs_nonroot_with_writable_tmp() -> None:
-    manifest = harden_kubernetes_manifest(
-        {
-            "kind": "Job",
-            "spec": {
-                "template": {
-                    "spec": {
-                        "containers": [
-                            {
-                                "name": "agent",
-                                "volumeMounts": [
-                                    {
-                                        "name": "trial",
-                                        "mountPath": "/brunner/trial",
-                                    }
-                                ],
-                            }
-                        ],
-                        "volumes": [{"name": "trial"}],
-                    }
-                }
-            },
+    assert campaign.controller.reviewer_secret_environment == {
+        "codex": {
+            "AZURE_OPENAI_API_KEY": (
+                "codex-provider-credentials",
+                "AZURE_OPENAI_API_KEY",
+            )
         }
-    )
-    pod = manifest["spec"]["template"]["spec"]
-    container = pod["containers"][0]
-
-    assert pod["automountServiceAccountToken"] is False
-    assert pod["securityContext"] == {
-        "runAsNonRoot": True,
-        "runAsUser": 1000,
-        "runAsGroup": 1000,
-        "fsGroup": 1000,
-        "seccompProfile": {"type": "RuntimeDefault"},
     }
-    assert {"name": "tmp", "emptyDir": {}} in pod["volumes"]
-    assert {"name": "tmp", "mountPath": "/tmp"} in (
-        container["volumeMounts"]
-    )
-    assert container["securityContext"]["readOnlyRootFilesystem"] is True
-    assert container["securityContext"]["capabilities"] == {
-        "drop": ["ALL"]
-    }
+    assert definition.evaluation.image.endswith("3" * 64)
 
 
-def test_actual_brunner_manifests_are_hardened(monkeypatch, tmp_path) -> None:
-    monkeypatch.setenv(
+def test_controller_reload_reproduces_submitted_image_identity(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    definition, contract, submitted = _campaign(monkeypatch)
+    definition_environment = definition_image_environment(definition)
+    campaign_environment = campaign_image_environment(submitted)
+    for name in (
         "MONKEYBENCH_AGENT_IMAGE",
-        "ghcr.io/cbizon/monkeybench-agent:test",
+        "MONKEYBENCH_CONTROLLER_IMAGE",
+        "MONKEYBENCH_EVALUATOR_IMAGE",
+        "MONKEYBENCH_SQUID_IMAGE",
+    ):
+        monkeypatch.delenv(name)
+
+    reloaded_definition = apply_definition_image_override(
+        build_definition(),
+        definition_environment,
     )
-    definition = build_definition()
-    contract = load_output_contract(definition.contract_path)
-    runner = build_campaign(definition, contract)
-    campaign_trial = runner.plan.trials[0]
-    trial = tmp_path / campaign_trial.test_id
-    trial.mkdir()
-    workload = runner.workload_factory(
-        trial,
-        campaign_trial,
-        runner.plan,
+    reloaded_campaign = apply_campaign_image_overrides(
+        build_campaign(reloaded_definition, contract),
+        campaign_environment,
+    )
+
+    assert reloaded_definition.evaluation.image == (
+        definition.evaluation.image
+    )
+    assert reloaded_campaign.to_dict() == submitted.to_dict()
+
+
+def test_cluster_resources_include_controller_and_monitor(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    definition, _, campaign = _campaign(monkeypatch)
+
+    resources = render_cluster_resources(
         definition,
-        "kubernetes",
+        campaign,
+        benchmark_ref="monkeybench.definition:build_reviewed_definition",
+        campaign_ref="monkeybench.campaign",
     )
 
-    job = harden_kubernetes_manifest(
-        render_job(
-            "monkeybench-agent",
-            "monkeybench-data",
-            workload,
-            runner.backend.profile,
-            {"app": "monkeybench"},
-        )
+    service = next(item for item in resources if item["kind"] == "Service")
+    deployment = next(
+        item for item in resources if item["kind"] == "Deployment"
     )
-    helper = harden_kubernetes_manifest(
-        render_helper_pod(
-            "monkeybench-helper",
-            "monkeybench-data",
-            "ghcr.io/cbizon/monkeybench-agent:test",
-            runner.backend.profile,
-            {"app": "monkeybench"},
-        )
-    )
+    preparation = next(item for item in resources if item["kind"] == "Job")
+    controller_pod = deployment["spec"]["template"]["spec"]
+    preparation_pod = preparation["spec"]["template"]["spec"]
 
-    job_pod = job["spec"]["template"]["spec"]
-    job_container = job_pod["containers"][0]
-    helper_container = helper["spec"]["containers"][0]
-    secret_environment = {
-        item["name"]: item["valueFrom"]["secretKeyRef"]
-        for item in job_container["env"]
-        if "valueFrom" in item
-    }
-
-    assert job_pod["securityContext"]["runAsUser"] == 1000
-    assert job_container["securityContext"][
+    assert service["spec"]["ports"][0]["port"] == 8765
+    assert controller_pod["securityContext"]["runAsNonRoot"] is True
+    assert preparation_pod["securityContext"]["runAsUser"] == 1000
+    assert controller_pod["containers"][0]["securityContext"][
         "readOnlyRootFilesystem"
     ] is True
-    assert helper["spec"]["securityContext"]["fsGroup"] == 1000
-    assert helper_container["workingDir"] == "/tmp"
-    assert helper_container["securityContext"][
-        "allowPrivilegeEscalation"
-    ] is False
-    assert secret_environment == {
-        "AZURE_OPENAI_API_KEY": {
-            "name": "balls-bench-codex-azure",
-            "key": "AZURE_OPENAI_API_KEY",
-        },
-        "CLAUDE_CODE_OAUTH_TOKEN": {
-            "name": "balls-bench-claude-oauth",
-            "key": "CLAUDE_CODE_OAUTH_TOKEN",
-        },
-    }
-
-
-def test_remote_agent_configures_azure_codex() -> None:
-    settings = provider_settings(
-        TrialIdentity(
-            test_id="codex-test",
-            provider="codex",
-            model="gpt-5.6-sol",
-            effort="xhigh",
-        )
+    assert not any(
+        item.get("valueFrom", {}).get("secretKeyRef")
+        for item in controller_pod["containers"][0].get("env", ())
     )
-    assert settings.provider_id == "azure"
-    assert settings.base_url == DEFAULT_CODEX_BASE_URL
-    assert settings.environment_key == "AZURE_OPENAI_API_KEY"
 
 
-def test_remote_agent_keeps_claude_native() -> None:
-    identity = TrialIdentity(
-        test_id="claude-test",
-        provider="claude",
-        model="claude-opus-5",
-        effort="max",
-    )
-    settings = provider_settings(identity)
-    assert settings.provider_id is None
-    assert settings.base_url is None
-    assert provider_executable(identity) == "claude"
-
-
-def test_codex_wrapper_bypasses_nested_sandbox(monkeypatch) -> None:
-    monkeypatch.delenv(
-        "MONKEYBENCH_CODEX_BYPASS_NESTED_SANDBOX",
-        raising=False,
-    )
-    arguments = prepare_codex_arguments(
-        [
-            "exec",
-            "--json",
-            "--sandbox",
-            "workspace-write",
-            "--model",
-            "gpt-5.4",
-        ]
-    )
-    assert arguments == [
-        "exec",
-        "--dangerously-bypass-approvals-and-sandbox",
-        "--json",
-        "--model",
-        "gpt-5.4",
-    ]
-
-
-def test_codex_wrapper_requires_expected_sandbox(monkeypatch) -> None:
-    monkeypatch.delenv(
-        "MONKEYBENCH_CODEX_BYPASS_NESTED_SANDBOX",
-        raising=False,
-    )
-    with pytest.raises(
-        RuntimeError,
-        match="does not include --sandbox",
-    ):
-        prepare_codex_arguments(["exec", "--json"])
-
-
-def test_codex_wrapper_creates_strict_provider_schema(
-    monkeypatch,
-    tmp_path,
+def test_current_codex_adapter_owns_unsandboxed_candidate_execution(
+    tmp_path: Path,
 ) -> None:
-    monkeypatch.delenv(
-        "MONKEYBENCH_CODEX_BYPASS_NESTED_SANDBOX",
-        raising=False,
-    )
-    monkeypatch.setenv("CODEX_HOME", str(tmp_path / "codex-home"))
-    source = tmp_path / "final-response.schema.json"
-    source.write_text(
+    schema = tmp_path / "schema.json"
+    schema.write_text(
         json.dumps(
             {
                 "type": "object",
                 "additionalProperties": False,
                 "required": ["status"],
-                "properties": {
-                    "status": {"enum": ["complete", "failed"]},
-                    "details": {"type": "object"},
-                },
+                "properties": {"status": {"type": "string"}},
             }
         )
     )
-
-    arguments = prepare_codex_arguments(
-        [
-            "exec",
-            "--sandbox",
-            "workspace-write",
-            "--output-schema",
-            str(source),
-        ]
+    context = ProviderRunContext(
+        workspace=tmp_path,
+        transcript_dir=tmp_path / "transcript",
+        final_schema_path=schema,
+        final_output_path=tmp_path / "final.json",
+        persist_session=False,
+        resume_session=False,
+        session_id=None,
     )
 
-    strict_path = Path(arguments[arguments.index("--output-schema") + 1])
-    strict = json.loads(strict_path.read_text())
-    assert strict["required"] == ["status"]
-    assert strict["properties"] == {
-        "status": {
-            "enum": ["complete", "failed"],
-            "type": "string",
-        }
-    }
-    assert strict["additionalProperties"] is False
-    assert json.loads(source.read_text())["properties"]["details"] == {
-        "type": "object"
-    }
+    command = CodexAdapter().build_command(
+        ProviderSettings(
+            provider="codex",
+            model="gpt-5.6-sol",
+            effort="low",
+        ),
+        context,
+    ).command
+
+    assert "--dangerously-bypass-approvals-and-sandbox" in command
+    assert command[command.index("--output-schema") + 1] == str(schema)
 
 
-def test_strict_output_schema_closes_nested_required_objects() -> None:
-    assert strict_output_schema(
-        {
-            "type": "object",
-            "required": ["payload"],
-            "properties": {
-                "payload": {
-                    "type": "object",
-                    "required": ["version"],
-                    "properties": {
-                        "version": {"const": "1.0"},
-                        "note": {"type": "string"},
-                    },
-                }
-            },
-        }
-    ) == {
+def test_current_claude_adapter_owns_candidate_permissions(
+    tmp_path: Path,
+) -> None:
+    schema = tmp_path / "schema.json"
+    canonical_schema = {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
         "type": "object",
-        "required": ["payload"],
-        "properties": {
-            "payload": {
-                "type": "object",
-                "required": ["version"],
-                "properties": {
-                    "version": {
-                        "const": "1.0",
-                        "type": "string",
-                    }
-                },
-                "additionalProperties": False,
-            }
-        },
         "additionalProperties": False,
+        "required": ["status"],
+        "properties": {"status": {"type": "string"}},
     }
+    schema.write_text(json.dumps(canonical_schema))
+    context = ProviderRunContext(
+        workspace=tmp_path,
+        transcript_dir=tmp_path / "transcript",
+        final_schema_path=schema,
+        final_output_path=tmp_path / "final.json",
+        persist_session=False,
+        resume_session=False,
+        session_id=None,
+    )
+
+    command = ClaudeAdapter().build_command(
+        ProviderSettings(
+            provider="claude",
+            model="claude-sonnet-5",
+            effort="low",
+        ),
+        context,
+    ).command
+
+    assert "--dangerously-skip-permissions" in command
+    assert "--no-session-persistence" in command
+    assert "--json-schema" in command
+    provider_schema = json.loads(command[command.index("--json-schema") + 1])
+    assert "$schema" not in provider_schema
+    assert provider_schema["properties"] == canonical_schema["properties"]
+    assert json.loads(schema.read_text()) == canonical_schema
+
+
+def test_agent_image_excludes_trusted_monkeybench_code() -> None:
+    root = Path(__file__).resolve().parents[1]
+    agent = (root / "containers/agent.Dockerfile").read_text()
+    controller = (root / "containers/controller.Dockerfile").read_text()
+
+    brunner_ref = "0994ab5efeb21b4b2a4f9d022576ad68e34e6299"
+    assert f"ARG BRUNNER_REF={brunner_ref}" in agent
+    assert f"ARG BRUNNER_REF={brunner_ref}" in controller
+    assert "ARG CLAUDE_CODE_VERSION=2.1.236" in agent
+    assert "COPY src" not in agent
+    assert "COPY challenge" not in agent
+    assert "COPY src" in controller
+    assert "COPY challenge" in controller
+    assert "COPY reference/manifest.json" in controller
+    assert "COPY reference /opt" not in controller

@@ -1,15 +1,23 @@
 from __future__ import annotations
 
 import json
+import os
 from dataclasses import replace
 from pathlib import Path
 
 from brunner.contract import load_output_contract
-from brunner.evaluation import evaluate_trial
+from brunner.evaluation import (
+    evaluation_spec,
+    execute_evaluation,
+    finalize_evaluation,
+)
 from brunner.trial import TrialIdentity, create_trial
 
 from monkeybench.definition import build_definition
 from monkeybench.evaluator import main as evaluator_main
+
+
+ROOT = Path(__file__).resolve().parents[1]
 
 
 def definition_without_materializer():
@@ -19,6 +27,28 @@ def definition_without_materializer():
         challenge=replace(
             definition.challenge,
             materialize_command=(),
+        ),
+    )
+
+
+def evaluate_trial(definition, contract, trial):
+    execute_evaluation(
+        evaluation_spec(definition, contract),
+        trial,
+        reference_root=definition.reference.root,
+    )
+    return finalize_evaluation(definition, contract, trial)
+
+
+def configure_evaluation_environment(monkeypatch) -> None:
+    monkeypatch.setenv(
+        "PYTHONPATH",
+        os.pathsep.join(
+            (
+                str(ROOT),
+                str(ROOT / "src"),
+                str(ROOT.parent / "brunner" / "src"),
+            )
         ),
     )
 
@@ -59,7 +89,7 @@ def test_perfect_trial_evaluates_end_to_end(
     monkeypatch,
     perfect_detections: dict,
 ) -> None:
-    monkeypatch.delenv("MONKEYBENCH_EVALUATOR_IMAGE", raising=False)
+    configure_evaluation_environment(monkeypatch)
     definition = definition_without_materializer()
     contract = load_output_contract(definition.contract_path)
     trial = create_trial(
@@ -159,7 +189,7 @@ def test_evaluator_main_uses_brunner_environment(
     monkeypatch,
     perfect_detections: dict,
 ) -> None:
-    monkeypatch.delenv("MONKEYBENCH_EVALUATOR_IMAGE", raising=False)
+    configure_evaluation_environment(monkeypatch)
     definition = definition_without_materializer()
     contract = load_output_contract(definition.contract_path)
     trial = create_trial(

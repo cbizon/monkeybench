@@ -8,9 +8,6 @@ dependencies = [
     "brunner",
 ]
 
-[project.scripts]
-monkeybench-codex = "monkeybench.codex_wrapper:main"
-
 [dependency-groups]
 dev = [
     "matplotlib>=3.9",

@@ -1,0 +1,25 @@
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: monkeybench-reference
+  namespace: bizon
+spec:
+  accessModes:
+    - ReadWriteMany
+  storageClassName: basic
+  resources:
+    requests:
+      storage: 2Gi
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: monkeybench-resource-cache
+  namespace: bizon
+spec:
+  accessModes:
+    - ReadWriteMany
+  storageClassName: basic
+  resources:
+    requests:
+      storage: 2Gi

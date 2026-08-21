@@ -1,57 +1,36 @@
-FROM python:3.12-bookworm AS python-builder
-
-ARG BRUNNER_REF=5c6c58641bd01bebbf9c17d5383ae08b40d4620a
-
-RUN apt-get update \
-    && apt-get install -y --no-install-recommends git \
-    && python -m venv /opt/venv \
-    && /opt/venv/bin/pip install --no-cache-dir \
-       "git+https://github.com/cbizon/brunner.git@${BRUNNER_REF}" \
-       "pillow==12.3.0" \
-    && rm -rf /var/lib/apt/lists/*
-
-WORKDIR /build/monkeybench
-COPY pyproject.toml README.md ./
-COPY src/ src/
-RUN /opt/venv/bin/pip install --no-cache-dir --no-deps .
-
-
-FROM node:22-bookworm-slim AS node-builder
-ARG CODEX_VERSION=0.144.1
-ARG CLAUDE_VERSION=2.1.110
-
-RUN npm install -g \
-       "@openai/codex@${CODEX_VERSION}" \
-       "@anthropic-ai/claude-code@${CLAUDE_VERSION}"
+FROM node:22-bookworm-slim AS node-runtime
 
 
 FROM python:3.12-slim-bookworm
 
-LABEL org.opencontainers.image.source="https://github.com/cbizon/monkeybench"
+COPY --from=node-runtime /usr/local /usr/local
+
+ARG BRUNNER_REF=0994ab5efeb21b4b2a4f9d022576ad68e34e6299
+ARG CODEX_VERSION=0.144.1
+ARG CLAUDE_CODE_VERSION=2.1.236
 
 RUN apt-get update \
     && apt-get install -y --no-install-recommends \
-       bubblewrap \
+       ca-certificates \
+       git \
        imagemagick \
        poppler-utils \
-       socat \
-       util-linux \
-    && useradd --create-home --uid 1000 benchmark \
-    && apt-get clean \
+    && python -m pip install --no-cache-dir \
+       "git+https://github.com/cbizon/brunner.git@${BRUNNER_REF}" \
+       "pillow==12.3.0" \
+    && npm install --global \
+       "@openai/codex@${CODEX_VERSION}" \
+       "@anthropic-ai/claude-code@${CLAUDE_CODE_VERSION}" \
+    && npm cache clean --force \
+    && apt-get purge -y --auto-remove git \
+    && useradd --uid 1000 --create-home --shell /usr/sbin/nologin brunner \
     && rm -rf /var/lib/apt/lists/*
 
-COPY --from=python-builder /opt/venv /opt/venv
-COPY --from=node-builder /usr/local/bin/node /usr/local/bin/node
-COPY --from=node-builder /usr/local/lib/node_modules /usr/local/lib/node_modules
-RUN ln -s ../lib/node_modules/@openai/codex/bin/codex.js /usr/local/bin/codex \
-    && ln -s ../lib/node_modules/@anthropic-ai/claude-code/cli.js /usr/local/bin/claude
-
-ENV PATH=/opt/venv/bin:$PATH \
-    PYTHONUNBUFFERED=1 \
+ENV PYTHONUNBUFFERED=1 \
     PIP_NO_INDEX=1 \
     UV_NO_SYNC=1
 
-USER benchmark
-WORKDIR /brunner/trial/workspace
+USER 1000:1000
+WORKDIR /tmp
 
-CMD ["brunner-agent", "--help"]
+CMD ["python", "-m", "brunner.agent_cli", "--help"]

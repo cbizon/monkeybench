@@ -6,6 +6,7 @@ from dataclasses import replace
 from pathlib import Path
 
 from brunner import (
+    ArtifactPolicy,
     AssessmentDefinition,
     AssessmentReport,
     BenchmarkDefinition,
@@ -16,15 +17,21 @@ from brunner import (
     RuntimeDefaults,
 )
 
-from monkeybench.remote_agent import (
+from monkeybench.campaign_matrix import (
     DEFAULT_CODEX_BASE_URL,
     DEFAULT_CODEX_ENVIRONMENT_KEY,
     DEFAULT_CODEX_PROVIDER_ID,
     DEFAULT_CODEX_PROVIDER_NAME,
 )
+from monkeybench.images import evaluator_image
 
 
-ROOT = Path(__file__).resolve().parents[2]
+ROOT = Path(
+    os.environ.get(
+        "MONKEYBENCH_ROOT",
+        Path(__file__).resolve().parents[2],
+    )
+).resolve()
 QUALITATIVE_ROOT = ROOT / "qualitative"
 DEFAULT_REVIEWER_MODEL = "gpt-5.6-sol"
 DEFAULT_REVIEWER_EFFORT = "xhigh"
@@ -46,12 +53,6 @@ QUALITATIVE_REVIEW_EVIDENCE = (
 
 
 def build_definition() -> BenchmarkDefinition:
-    evaluator_image = os.environ.get("MONKEYBENCH_EVALUATOR_IMAGE")
-    evaluator_command = (
-        ("python", "-m", "monkeybench.evaluator")
-        if evaluator_image
-        else (sys.executable, "-m", "monkeybench.evaluator")
-    )
     return BenchmarkDefinition(
         benchmark_id="monkey-wbc-localization",
         version="1.0.0",
@@ -65,30 +66,44 @@ def build_definition() -> BenchmarkDefinition:
                 "source-subjects.json",
             ),
             materialize_command=(
-                sys.executable,
+                "python",
                 "-m",
                 "monkeybench.materialize_challenge",
             ),
             materialize_timeout_seconds=5 * 60,
         ),
         evaluation=EvaluationDefinition(
-            command=evaluator_command,
+            command=("python", "-m", "monkeybench.evaluator"),
             timeout_seconds=15 * 60,
-            image=evaluator_image,
+            image=evaluator_image(),
+            primary_report="evaluation/detection-report.html",
+            cpu_request="500m",
+            cpu_limit="2",
+            memory_request="512Mi",
+            memory_limit="2Gi",
+            ephemeral_storage_request="256Mi",
+            ephemeral_storage_limit="1Gi",
         ),
         reference=ReferenceDefinition(
             root=ROOT / "reference",
             validate_command=(
-                sys.executable,
+                "python",
                 "-m",
                 "monkeybench.reference_validation",
             ),
+        ),
+        artifacts=ArtifactPolicy(
+            collect_evaluated_artifacts=True,
+            max_collection_bytes=512 * 1024 * 1024,
+            max_diagnostic_collection_bytes=128 * 1024 * 1024,
         ),
         runtime=RuntimeDefaults(
             timeout_seconds=12 * 60 * 60,
             finalization_seconds=10 * 60,
             retry_initial_seconds=15,
             retry_max_seconds=5 * 60,
+            provider_exit_grace_seconds=60,
+            backend_shutdown_grace_seconds=2 * 60,
             max_attempts=10,
             max_activity_interval_seconds=60 * 60,
             submission_poll_seconds=2,
@@ -97,17 +112,6 @@ def build_definition() -> BenchmarkDefinition:
 
 
 def build_reviewed_definition() -> BenchmarkDefinition:
-    reviewer_model = os.environ.get(
-        "MONKEYBENCH_REVIEWER_MODEL",
-        DEFAULT_REVIEWER_MODEL,
-    )
-    reviewer_executable = os.environ.get(
-        "MONKEYBENCH_REVIEWER_EXECUTABLE"
-    )
-    reviewer_effort = os.environ.get(
-        "MONKEYBENCH_REVIEWER_EFFORT",
-        DEFAULT_REVIEWER_EFFORT,
-    )
     qualitative_assessment = AssessmentDefinition(
         assessment_id="qualitative-review",
         root=QUALITATIVE_ROOT,
@@ -118,26 +122,13 @@ def build_reviewed_definition() -> BenchmarkDefinition:
         output_path="evaluation/qualitative-review.json",
         reviewer=ProviderSettings(
             provider="codex",
-            model=reviewer_model,
-            effort=reviewer_effort,
-            provider_id=os.environ.get(
-                "MONKEYBENCH_CODEX_PROVIDER_ID",
-                DEFAULT_CODEX_PROVIDER_ID,
-            ),
-            provider_name=os.environ.get(
-                "MONKEYBENCH_CODEX_PROVIDER_NAME",
-                DEFAULT_CODEX_PROVIDER_NAME,
-            ),
-            base_url=os.environ.get(
-                "MONKEYBENCH_CODEX_BASE_URL",
-                DEFAULT_CODEX_BASE_URL,
-            ),
-            environment_key=os.environ.get(
-                "MONKEYBENCH_CODEX_ENVIRONMENT_KEY",
-                DEFAULT_CODEX_ENVIRONMENT_KEY,
-            ),
+            model=DEFAULT_REVIEWER_MODEL,
+            effort=DEFAULT_REVIEWER_EFFORT,
+            provider_id=DEFAULT_CODEX_PROVIDER_ID,
+            provider_name=DEFAULT_CODEX_PROVIDER_NAME,
+            base_url=DEFAULT_CODEX_BASE_URL,
+            environment_key=DEFAULT_CODEX_ENVIRONMENT_KEY,
         ),
-        reviewer_executable=reviewer_executable,
         render_command=(
             sys.executable,
             str(QUALITATIVE_ROOT / "render.py"),
