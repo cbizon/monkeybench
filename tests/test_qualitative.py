@@ -9,7 +9,11 @@ from pathlib import Path
 from typing import Any
 
 from brunner.contract import load_output_contract
-from brunner.evaluation import evaluate_trial
+from brunner.evaluation import (
+    evaluation_spec,
+    execute_evaluation,
+    finalize_evaluation,
+)
 from brunner.trial import TrialIdentity, create_trial
 from jsonschema import Draft202012Validator
 
@@ -17,6 +21,18 @@ from monkeybench.definition import (
     QUALITATIVE_ROOT,
     build_reviewed_definition,
 )
+
+
+ROOT = Path(__file__).resolve().parents[1]
+
+
+def evaluate_trial(definition, contract, trial):
+    execute_evaluation(
+        evaluation_spec(definition, contract),
+        trial,
+        reference_root=definition.reference.root,
+    )
+    return finalize_evaluation(definition, contract, trial)
 
 
 def valid_review() -> dict[str, Any]:
@@ -179,14 +195,31 @@ def test_reviewed_trial_runs_custom_qualitative_assessment(
 ) -> None:
     reviewer = tmp_path / "reviewer"
     write_reviewer(reviewer, valid_review())
-    monkeypatch.setenv("MONKEYBENCH_REVIEWER_MODEL", "review-model")
-    monkeypatch.setenv("MONKEYBENCH_REVIEWER_EXECUTABLE", str(reviewer))
     definition = build_reviewed_definition()
+    assessment = replace(
+        definition.assessments[0],
+        reviewer=replace(
+            definition.assessments[0].reviewer,
+            model="review-model",
+        ),
+        reviewer_executable=str(reviewer),
+    )
     definition = replace(
         definition,
         challenge=replace(
             definition.challenge,
             materialize_command=(),
+        ),
+        assessments=(assessment,),
+    )
+    monkeypatch.setenv(
+        "PYTHONPATH",
+        os.pathsep.join(
+            (
+                str(ROOT),
+                str(ROOT / "src"),
+                str(ROOT.parent / "brunner" / "src"),
+            )
         ),
     )
     contract = load_output_contract(definition.contract_path)

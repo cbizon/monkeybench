@@ -1,43 +1,36 @@
 from __future__ import annotations
 
-import os
-
-from brunner import BenchmarkDefinition, CampaignRunner
+from brunner import BenchmarkDefinition, ClusterCampaign
 from brunner.contract import OutputContract
 
-from monkeybench.campaign_matrix import build_kubernetes_campaign
+from monkeybench.campaign_matrix import (
+    CANARY_TRIAL_IDS,
+    build_campaign_trials,
+    build_cluster_campaign,
+    select_trials,
+)
 
 
 def build_campaign(
     definition: BenchmarkDefinition,
     contract: OutputContract,
-) -> CampaignRunner:
-    # Brunner currently applies profile secret references to every Job.
-    # Keep both providers in one campaign until per-workload secrets exist.
-    secret_environment = {
-        "AZURE_OPENAI_API_KEY": (
-            os.environ.get(
-                "MONKEYBENCH_CODEX_SECRET",
-                "balls-bench-codex-azure",
-            ),
-            os.environ.get(
-                "MONKEYBENCH_CODEX_SECRET_KEY",
-                "AZURE_OPENAI_API_KEY",
-            ),
-        ),
-        "CLAUDE_CODE_OAUTH_TOKEN": (
-            os.environ.get(
-                "MONKEYBENCH_CLAUDE_SECRET",
-                "balls-bench-claude-oauth",
-            ),
-            os.environ.get(
-                "MONKEYBENCH_CLAUDE_SECRET_KEY",
-                "CLAUDE_CODE_OAUTH_TOKEN",
-            ),
-        ),
-    }
-    return build_kubernetes_campaign(
+) -> ClusterCampaign:
+    return build_cluster_campaign(
         definition,
         contract,
-        secret_environment=secret_environment,
+        campaign_id="monkey-wbc-model-sweep-v2",
+        trials=build_campaign_trials(),
+    )
+
+
+def build_canary_campaign(
+    definition: BenchmarkDefinition,
+    contract: OutputContract,
+) -> ClusterCampaign:
+    trials = select_trials(build_campaign_trials(), CANARY_TRIAL_IDS)
+    return build_cluster_campaign(
+        definition,
+        contract,
+        campaign_id="monkey-wbc-canary-v2",
+        trials=trials,
     )

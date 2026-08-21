@@ -29,8 +29,9 @@ def _make_trial(
     test_id: str,
     *,
     include_per_type_typing: bool,
+    layout: str = "collected",
 ) -> Path:
-    trial_root = campaign_root / "collected" / test_id
+    trial_root = campaign_root / layout / test_id
     _write_json(
         campaign_root / "campaign.json",
         {"campaign_id": "test-campaign"},
@@ -201,6 +202,18 @@ def test_discovers_only_top_level_collected_trials(tmp_path: Path) -> None:
         / "results.json"
     )
     _write_json(nested_results, {"summary": {}})
+
+    assert discover_trial_roots([tmp_path]) == [trial_root.resolve()]
+
+
+def test_discovers_cluster_retrieved_trial_layout(tmp_path: Path) -> None:
+    campaign_root = tmp_path / "retrieved"
+    trial_root = _make_trial(
+        campaign_root,
+        "codex-gpt-test-low-r01",
+        include_per_type_typing=True,
+        layout="trials",
+    )
 
     assert discover_trial_roots([tmp_path]) == [trial_root.resolve()]
 

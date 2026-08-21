@@ -1,5 +1,12 @@
 *
 !README.md
 !pyproject.toml
+!output-contract.json
 !src/
 !src/**
+!challenge/
+!challenge/**
+!qualitative/
+!qualitative/**
+!reference/
+!reference/manifest.json

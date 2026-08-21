@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import copy
-import sys
 from dataclasses import replace
 from pathlib import Path
 
@@ -19,7 +18,7 @@ from monkeybench.definition import (
     build_definition,
     build_reviewed_definition,
 )
-from monkeybench.remote_agent import DEFAULT_CODEX_BASE_URL
+from monkeybench.campaign_matrix import DEFAULT_CODEX_BASE_URL
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -41,29 +40,44 @@ def test_contract_and_definition_validate() -> None:
     assert contract.benchmark_id == "monkey-wbc-localization"
     assert contract.work_unit_ids == ("classify-practice-images",)
     assert definition.display_title is None
-    assert definition.evaluation.command[0] == sys.executable
+    assert definition.evaluation.command == (
+        "python",
+        "-m",
+        "monkeybench.evaluator",
+    )
+    assert definition.evaluation.image.endswith("0" * 64)
+    assert definition.evaluation.primary_report == (
+        "evaluation/detection-report.html"
+    )
     assert definition.challenge.materialize_command == (
-        sys.executable,
+        "python",
         "-m",
         "monkeybench.materialize_challenge",
     )
     assert definition.challenge.materialize_timeout_seconds == 5 * 60
+    assert definition.reference.validate_command == (
+        "python",
+        "-m",
+        "monkeybench.reference_validation",
+    )
     assert definition.runtime.timeout_seconds == 12 * 60 * 60
     assert definition.runtime.max_attempts == 10
     assert definition.runtime.max_activity_interval_seconds == 60 * 60
     assert definition.runtime.submission_poll_seconds == 2
+    assert definition.artifacts.collect_evaluated_artifacts is True
+    assert definition.artifacts.max_collection_bytes == 512 * 1024 * 1024
 
 
 def test_container_evaluator_uses_container_python(monkeypatch) -> None:
     monkeypatch.setenv(
         "MONKEYBENCH_EVALUATOR_IMAGE",
-        "registry.example/monkeybench-evaluator:1.0.0",
+        "registry.example/monkeybench-evaluator@sha256:" + "7" * 64,
     )
 
     definition = build_definition()
 
     assert definition.evaluation.image == (
-        "registry.example/monkeybench-evaluator:1.0.0"
+        "registry.example/monkeybench-evaluator@sha256:" + "7" * 64
     )
     assert definition.evaluation.command == (
         "python",
@@ -72,15 +86,7 @@ def test_container_evaluator_uses_container_python(monkeypatch) -> None:
     )
 
 
-def test_reviewed_definition_uses_monkeybench_qualitative_review(
-    monkeypatch,
-) -> None:
-    monkeypatch.setenv("MONKEYBENCH_REVIEWER_MODEL", "review-model")
-    monkeypatch.setenv(
-        "MONKEYBENCH_REVIEWER_EXECUTABLE",
-        "/opt/reviewers/codex",
-    )
-
+def test_reviewed_definition_uses_monkeybench_qualitative_review() -> None:
     definition = build_reviewed_definition()
     definition.validate()
 
@@ -91,11 +97,11 @@ def test_reviewed_definition_uses_monkeybench_qualitative_review(
     assert assessment.root == QUALITATIVE_ROOT
     assert assessment.reviewer is not None
     assert assessment.reviewer.provider == "codex"
-    assert assessment.reviewer.model == "review-model"
+    assert assessment.reviewer.model == DEFAULT_REVIEWER_MODEL
     assert assessment.reviewer.effort == "xhigh"
     assert assessment.reviewer.base_url == DEFAULT_CODEX_BASE_URL
     assert assessment.reviewer.environment_key == "AZURE_OPENAI_API_KEY"
-    assert assessment.reviewer_executable == "/opt/reviewers/codex"
+    assert assessment.reviewer_executable is None
     assert assessment.required is True
     assert assessment.run_if_evaluation_failed is True
     assert assessment.trial_evidence_paths == QUALITATIVE_REVIEW_EVIDENCE
@@ -113,10 +119,7 @@ def test_reviewed_definition_uses_monkeybench_qualitative_review(
     )
 
 
-def test_reviewed_definition_uses_default_reviewer(monkeypatch) -> None:
-    monkeypatch.delenv("MONKEYBENCH_REVIEWER_MODEL", raising=False)
-    monkeypatch.delenv("MONKEYBENCH_REVIEWER_EFFORT", raising=False)
-
+def test_reviewed_definition_uses_deterministic_reviewer() -> None:
     assessment = build_reviewed_definition().assessments[0]
 
     assert assessment.reviewer is not None
