@@ -3,15 +3,13 @@ from __future__ import annotations
 import os
 
 
-_PLACEHOLDER_DIGEST = "0" * 64
-
 DEFAULT_AGENT_IMAGE = (
     "ghcr.io/cbizon/monkeybench-agent@sha256:"
-    f"{_PLACEHOLDER_DIGEST}"
+    "97ac6644fd5c34375ba67b75c7e38c916a590a203f6288cdc3110ba88f4ef8d6"
 )
 DEFAULT_CONTROLLER_IMAGE = (
     "ghcr.io/cbizon/monkeybench-controller@sha256:"
-    f"{_PLACEHOLDER_DIGEST}"
+    "92e39b77ac2d58744e34890b51b57a069a280d4210cb4becc05d1b193b086af4"
 )
 DEFAULT_EVALUATOR_IMAGE = DEFAULT_CONTROLLER_IMAGE
 DEFAULT_SQUID_IMAGE = (

@@ -36,6 +36,7 @@ RUN python -m pip install --no-cache-dir --no-deps /opt/monkeybench
 COPY output-contract.json /opt/monkeybench/output-contract.json
 COPY challenge /opt/monkeybench/challenge
 COPY qualitative /opt/monkeybench/qualitative
+COPY resources /opt/monkeybench/resources
 COPY reference/manifest.json /opt/monkeybench/reference/manifest.json
 
 ENV MONKEYBENCH_ROOT=/opt/monkeybench \

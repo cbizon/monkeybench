@@ -34,6 +34,10 @@ from monkeybench.campaign_matrix import (
     select_trials,
 )
 from monkeybench.definition import build_definition
+from monkeybench.images import (
+    DEFAULT_AGENT_IMAGE,
+    DEFAULT_CONTROLLER_IMAGE,
+)
 
 
 EXPECTED_CODEX = {
@@ -56,6 +60,14 @@ EXPECTED_CLAUDE = {
     ("claude-sonnet-5", "max"),
     ("claude-sonnet-5", "low"),
 }
+EXPECTED_AGENT_IMAGE = (
+    "ghcr.io/cbizon/monkeybench-agent@sha256:"
+    "97ac6644fd5c34375ba67b75c7e38c916a590a203f6288cdc3110ba88f4ef8d6"
+)
+EXPECTED_CONTROLLER_IMAGE = (
+    "ghcr.io/cbizon/monkeybench-controller@sha256:"
+    "92e39b77ac2d58744e34890b51b57a069a280d4210cb4becc05d1b193b086af4"
+)
 
 
 def _configure_images(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -113,6 +125,11 @@ def test_campaign_trial_ids_are_unique() -> None:
     assert not any(
         trial.test_id.startswith("claude-claude-") for trial in trials
     )
+
+
+def test_default_images_are_published_immutable_digests() -> None:
+    assert DEFAULT_AGENT_IMAGE == EXPECTED_AGENT_IMAGE
+    assert DEFAULT_CONTROLLER_IMAGE == EXPECTED_CONTROLLER_IMAGE
 
 
 def test_trial_selection_preserves_requested_order() -> None:
@@ -443,6 +460,7 @@ def test_agent_image_excludes_trusted_monkeybench_code() -> None:
     root = Path(__file__).resolve().parents[1]
     agent = (root / "containers/agent.Dockerfile").read_text()
     controller = (root / "containers/controller.Dockerfile").read_text()
+    dockerignore = (root / ".dockerignore").read_text()
 
     brunner_ref = "bb51a9eb048f6f6470fb101124de8958f1fb748b"
     assert f"ARG BRUNNER_REF={brunner_ref}" in agent
@@ -452,5 +470,7 @@ def test_agent_image_excludes_trusted_monkeybench_code() -> None:
     assert "COPY challenge" not in agent
     assert "COPY src" in controller
     assert "COPY challenge" in controller
+    assert "COPY resources" in controller
     assert "COPY reference/manifest.json" in controller
     assert "COPY reference /opt" not in controller
+    assert "!resources/**" in dockerignore

@@ -2,7 +2,10 @@ from __future__ import annotations
 
 import hashlib
 import json
+import os
 from pathlib import Path
+import subprocess
+import sys
 
 import pytest
 
@@ -100,3 +103,29 @@ def test_materialize_assets_rejects_checksum_mismatch(
             cache,
             manifest_path=manifest,
         )
+
+
+def test_materializer_uses_configured_monkeybench_root(
+    tmp_path: Path,
+) -> None:
+    result = subprocess.run(
+        [
+            sys.executable,
+            "-c",
+            (
+                "from monkeybench.materialize_challenge import "
+                "ASSET_MANIFEST; print(ASSET_MANIFEST)"
+            ),
+        ],
+        check=True,
+        capture_output=True,
+        text=True,
+        env={
+            **os.environ,
+            "MONKEYBENCH_ROOT": str(tmp_path),
+        },
+    )
+
+    assert result.stdout.strip() == str(
+        tmp_path / "resources/external-training-assets.json"
+    )
