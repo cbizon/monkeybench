@@ -378,8 +378,11 @@ def build_parser() -> argparse.ArgumentParser:
         "inputs",
         nargs="*",
         type=Path,
-        default=[Path("campaign-runs")],
-        help="Campaign roots, trial roots, or directories containing campaigns.",
+        default=[Path("monkeybench-results")],
+        help=(
+            "Synchronized campaign archives, historical campaign roots, "
+            "trial roots, or directories containing them."
+        ),
     )
     parser.add_argument(
         "--output-dir",

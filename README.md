@@ -46,6 +46,9 @@ localization performance from per-image and total `TP`/`FP`/`FN`, and
 interprets the typing accuracy and confusion matrix. It is required by the
 reviewed definition and runs after deterministic evaluation, including when
 that evaluation fails.
+If a provider session ends before producing a valid submission, the review
+still characterizes the available transcript and partial work while marking
+localization and typing performance unavailable.
 
 Its evidence is deliberately limited to deterministic results and diagnostics,
 the rendered prompt, subject manifest, candidate submission, transcript,
@@ -99,8 +102,9 @@ containing both Codex and Claude trials. It reproduces the current
 
 The full campaign has 16 deterministic trial IDs and is serialized by default.
 The fixed canary campaign contains `codex-gpt-5-4-low-r01` and
-`claude-sonnet-5-low-r01`. Campaign state is cluster-resident and append-only
-by trial ID.
+`claude-sonnet-5-low-r01`. Active campaign state is cluster-resident and
+append-only by trial ID; repeated `campaign-sync` calls maintain the durable
+local archive used for monitoring, retirement, and later restoration.
 
 ### Build the images
 
@@ -118,7 +122,7 @@ It is also used as the trusted evaluator and artifact-reader image. Reference
 answers remain on the separate reference PVC.
 
 ```bash
-export RELEASE=brunner-0994ab5
+export RELEASE=brunner-bb51a9e
 export KUBECTL_VERSION=v1.31.9
 
 docker buildx build --platform linux/amd64 \
@@ -184,35 +188,78 @@ uv run brunner \
 
 uv run brunner \
   --benchmark monkeybench.definition:build_reviewed_definition \
-  campaign-monitor monkeybench.campaign:build_canary_campaign \
+  campaign-sync monkeybench.campaign:build_canary_campaign \
+  ./monkeybench-canary-results
+
+uv run brunner campaign-monitor \
+  ./monkeybench-canary-results \
   --local-port 8766
 
+# Repeat campaign-sync to refresh the local archive while work continues.
+# If a provider exhausted its paid session, resume that retained session once.
 uv run brunner \
   --benchmark monkeybench.definition:build_reviewed_definition \
-  campaign-retrieve monkeybench.campaign:build_canary_campaign \
+  campaign-continue monkeybench.campaign:build_canary_campaign \
+  FAILED_TEST_ID \
+  --additional-attempts 1
+
+# After the canary is terminal, verify one final sync and retire its resources.
+uv run brunner \
+  --benchmark monkeybench.definition:build_reviewed_definition \
+  campaign-retire monkeybench.campaign:build_canary_campaign \
   ./monkeybench-canary-results
 
 # Submit the full serialized model sweep after the canary passes.
 uv run brunner \
   --benchmark monkeybench.definition:build_reviewed_definition \
   campaign-submit monkeybench.campaign
+
+uv run brunner \
+  --benchmark monkeybench.definition:build_reviewed_definition \
+  campaign-sync monkeybench.campaign \
+  ./monkeybench-results
+
+uv run brunner campaign-monitor \
+  ./monkeybench-results \
+  --local-port 8766
+
+# After the full campaign is terminal and the archive is current:
+uv run brunner \
+  --benchmark monkeybench.definition:build_reviewed_definition \
+  campaign-retire monkeybench.campaign \
+  ./monkeybench-results
 ```
 
 Each candidate requests 500 millicores and 4 GiB, may burst to 2 CPUs and
-8 GiB, and receives a 2 GiB trial PVC. The runtime limit is 12 hours so a
-Claude trial can survive a subscription reset. The cluster controller owns
-preparation, reconciliation, trusted evaluation, review, publication,
-dashboard serving, and cleanup even when the laptop disconnects.
+8 GiB, and receives a 2 GiB trial PVC. The runtime limit is 12 hours for a
+long-running active provider session. Exhausted provider credits are terminal
+rather than consuming repeated attempts; Brunner retains the provider session
+and trial PVC so `campaign-continue` can authorize exactly one resumed attempt
+after credits become available. The cluster controller owns preparation,
+reconciliation, trusted evaluation, review, archive publication, and cleanup
+even when the laptop disconnects.
 When a candidate Job exits, Brunner finishes its collection and deterministic
 evaluation before admitting another candidate. This prevents the next trial
 from consuming resources needed to evaluate the completed one.
-Use `campaign-delete` to remove a campaign control plane; add
-`--delete-results` only when its finalized results PVC should also be removed.
+`campaign-monitor` serves only a synchronized local archive and never contacts
+Kubernetes. `campaign-retire` performs a final verified synchronization before
+deleting all campaign-owned control, results, and trial resources. The shared
+reference and resource-cache PVCs remain intact.
+
+To append trial IDs after retirement, update the campaign definition and
+restore its completed state into a fresh control plane:
+
+```bash
+uv run brunner \
+  --benchmark monkeybench.definition:build_reviewed_definition \
+  campaign-submit monkeybench.campaign \
+  --resume-from ./monkeybench-results
+```
 
 ### Analyze campaigns
 
 Collect normalized tables from historical `campaign-runs/` directories or a
-new checksum-verified `campaign-retrieve` destination:
+new checksum-verified `campaign-sync` archive:
 
 ```bash
 uv run python scripts/collect_campaign_metrics.py \

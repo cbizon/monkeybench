@@ -11,4 +11,8 @@ dist/
 runs/
 staged/
 campaign-runs/
+monkeybench-canary-results/
+monkeybench-results/
+.monkeybench-canary-results.brunner-*/
+.monkeybench-results.brunner-*/
 analysis-output/

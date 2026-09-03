@@ -10,6 +10,7 @@ from brunner.cluster import (
     apply_campaign_image_overrides,
     apply_definition_image_override,
     campaign_image_environment,
+    campaign_resources,
     definition_image_environment,
     render_cluster_resources,
 )
@@ -269,6 +270,7 @@ def test_cluster_profiles_follow_current_brunner_security_boundary(
 
     assert campaign.backend.network_isolation_mode == "controlled-egress"
     assert campaign.backend.reference_claim_name == "monkeybench-reference"
+    assert campaign.backend.retain_failed_storage is True
     assert campaign.backend.proxy_image.endswith("4" * 64)
     assert campaign.backend.image_pull_secrets == (
         "registry-credentials",
@@ -316,10 +318,11 @@ def test_controller_reload_reproduces_submitted_image_identity(
     assert reloaded_campaign.to_dict() == submitted.to_dict()
 
 
-def test_cluster_resources_include_controller_and_monitor(
+def test_cluster_resources_include_controller_and_continuation_requests(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     definition, _, campaign = _campaign(monkeypatch)
+    names = campaign_resources(definition, campaign)
 
     resources = render_cluster_resources(
         definition,
@@ -328,17 +331,28 @@ def test_cluster_resources_include_controller_and_monitor(
         campaign_ref="monkeybench.campaign",
     )
 
-    service = next(item for item in resources if item["kind"] == "Service")
+    assert all(item["kind"] != "Service" for item in resources)
     deployment = next(
         item for item in resources if item["kind"] == "Deployment"
     )
     preparation = next(item for item in resources if item["kind"] == "Job")
+    config_maps = {
+        item["metadata"]["name"]: item
+        for item in resources
+        if item["kind"] == "ConfigMap"
+    }
+    continuation_requests = json.loads(
+        config_maps[names.continuation_config_map]["data"]["requests.json"]
+    )
     controller_pod = deployment["spec"]["template"]["spec"]
     preparation_pod = preparation["spec"]["template"]["spec"]
 
-    assert service["spec"]["ports"][0]["port"] == 8765
+    assert continuation_requests["requests"] == []
+    assert continuation_requests["campaign_sha256"] == campaign.sha256
     assert controller_pod["securityContext"]["runAsNonRoot"] is True
     assert preparation_pod["securityContext"]["runAsUser"] == 1000
+    assert "ports" not in controller_pod["containers"][0]
+    assert "readinessProbe" not in controller_pod["containers"][0]
     assert controller_pod["containers"][0]["securityContext"][
         "readOnlyRootFilesystem"
     ] is True
@@ -430,7 +444,7 @@ def test_agent_image_excludes_trusted_monkeybench_code() -> None:
     agent = (root / "containers/agent.Dockerfile").read_text()
     controller = (root / "containers/controller.Dockerfile").read_text()
 
-    brunner_ref = "0994ab5efeb21b4b2a4f9d022576ad68e34e6299"
+    brunner_ref = "bb51a9eb048f6f6470fb101124de8958f1fb748b"
     assert f"ARG BRUNNER_REF={brunner_ref}" in agent
     assert f"ARG BRUNNER_REF={brunner_ref}" in controller
     assert "ARG CLAUDE_CODE_VERSION=2.1.236" in agent

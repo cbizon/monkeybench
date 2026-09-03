@@ -7,6 +7,7 @@ from pathlib import Path
 import pytest
 
 from monkeybench.analysis import (
+    build_parser,
     collect_analysis,
     discover_trial_roots,
     write_analysis,
@@ -206,8 +207,8 @@ def test_discovers_only_top_level_collected_trials(tmp_path: Path) -> None:
     assert discover_trial_roots([tmp_path]) == [trial_root.resolve()]
 
 
-def test_discovers_cluster_retrieved_trial_layout(tmp_path: Path) -> None:
-    campaign_root = tmp_path / "retrieved"
+def test_discovers_cluster_synced_archive_layout(tmp_path: Path) -> None:
+    campaign_root = tmp_path / "synced"
     trial_root = _make_trial(
         campaign_root,
         "codex-gpt-test-low-r01",
@@ -216,6 +217,12 @@ def test_discovers_cluster_retrieved_trial_layout(tmp_path: Path) -> None:
     )
 
     assert discover_trial_roots([tmp_path]) == [trial_root.resolve()]
+
+
+def test_collector_defaults_to_synced_archive() -> None:
+    args = build_parser().parse_args([])
+
+    assert args.inputs == [Path("monkeybench-results")]
 
 
 def test_writes_tables_and_charts(tmp_path: Path) -> None:
