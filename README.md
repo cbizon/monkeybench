@@ -141,6 +141,17 @@ Resolve both pushed digests and use `image@sha256:...` values below. The
 campaign also pins the managed Squid image. Mutable tags are rejected before
 candidate work starts.
 
+The currently published immutable images are:
+
+```text
+agent:      ghcr.io/cbizon/monkeybench-agent@sha256:97ac6644fd5c34375ba67b75c7e38c916a590a203f6288cdc3110ba88f4ef8d6
+controller: ghcr.io/cbizon/monkeybench-controller@sha256:92e39b77ac2d58744e34890b51b57a069a280d4210cb4becc05d1b193b086af4
+```
+
+They are the defaults in `src/monkeybench/images.py`. Environment overrides
+are only needed when testing a newly published image before updating those
+defaults.
+
 ### Configure Sterling inputs
 
 The campaign references these existing Secrets:
@@ -171,12 +182,6 @@ kubectl --namespace bizon annotate pvc monkeybench-reference \
 ### Run the campaigns
 
 ```bash
-export MONKEYBENCH_AGENT_IMAGE=\
-"ghcr.io/cbizon/monkeybench-agent@sha256:AGENT_DIGEST"
-export MONKEYBENCH_CONTROLLER_IMAGE=\
-"ghcr.io/cbizon/monkeybench-controller@sha256:CONTROLLER_DIGEST"
-export MONKEYBENCH_EVALUATOR_IMAGE="$MONKEYBENCH_CONTROLLER_IMAGE"
-
 # Submit the fixed two-provider canary.
 uv run brunner \
   --benchmark monkeybench.definition:build_reviewed_definition \

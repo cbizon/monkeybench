@@ -9,7 +9,12 @@ from pathlib import Path
 from typing import Any
 
 
-ROOT = Path(__file__).resolve().parents[2]
+ROOT = Path(
+    os.environ.get(
+        "MONKEYBENCH_ROOT",
+        Path(__file__).resolve().parents[2],
+    )
+).resolve()
 ASSET_MANIFEST = ROOT / "resources/external-training-assets.json"
 
 

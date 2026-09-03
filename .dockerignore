@@ -8,5 +8,7 @@
 !challenge/**
 !qualitative/
 !qualitative/**
+!resources/
+!resources/**
 !reference/
 !reference/manifest.json
