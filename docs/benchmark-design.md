@@ -160,7 +160,14 @@ version, not hidden sampling behavior.
 - `monkeybench.evaluator` runs in the trusted evaluator container and reads
   only Brunner-validated artifacts plus the mounted reference bundle.
 - The cluster controller owns evaluation finalization, qualitative review,
-  publication, dashboard serving, cleanup, and resumable result retrieval.
+  checksummed archive publication, and cleanup.
+- `campaign-sync` copies and verifies active or terminal snapshots into a
+  portable local archive. `campaign-monitor` serves only that local archive,
+  while `campaign-retire` requires a verified terminal archive before deleting
+  all campaign-owned cluster resources.
+- Provider-credit exhaustion is terminal. Brunner retains the failed trial PVC
+  and provider session, and `campaign-continue` can authorize exactly one
+  resumed attempt without changing the staged workspace or workload identity.
 - Pending collection and deterministic evaluation take admission priority over
   new candidate Jobs, so a newly admitted trial cannot starve evaluation of a
   completed trial.
@@ -185,3 +192,6 @@ timing, usage, and status. The reviewer characterizes the observed workflow,
 localization error pattern, typing confusion pattern, and class marginals. It
 does not receive the candidate image corpus or materialized video and cannot
 visually re-grade the cells.
+Because `run_if_evaluation_failed` is enabled, a provider-error trial can still
+receive a transcript and partial-work review; localization and typing are
+reported as unavailable when deterministic evaluation did not run.

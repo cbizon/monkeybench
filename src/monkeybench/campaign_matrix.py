@@ -185,6 +185,7 @@ def build_cluster_campaign(
             image_pull_secrets=DEFAULT_IMAGE_PULL_SECRETS,
             proxy_image=squid_image(),
             max_parallel=max_parallel,
+            retain_failed_storage=True,
             command_timeout_seconds=60,
             staging_timeout_seconds=10 * 60,
             reader_timeout_seconds=10 * 60,
