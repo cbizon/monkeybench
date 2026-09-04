@@ -146,8 +146,14 @@ def render(review: dict[str, Any]) -> str:
 
 def main() -> int:
     output = Path(os.environ["BRUNNER_ASSESSMENT_OUTPUT"]).resolve()
-    trial = Path(os.environ["BRUNNER_TRIAL_ROOT"]).resolve()
-    report = trial / "evaluation/qualitative-review.html"
+    output_root = Path(
+        os.environ["BRUNNER_ASSESSMENT_OUTPUT_ROOT"]
+    ).resolve()
+    report = output.with_suffix(".html")
+    if not report.is_relative_to(output_root):
+        raise ValueError(
+            "qualitative review report must remain in the assessment output"
+        )
     review = json.loads(output.read_text())
     report.write_text(render(review))
     return 0
