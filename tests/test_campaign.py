@@ -66,7 +66,7 @@ EXPECTED_AGENT_IMAGE = (
 )
 EXPECTED_CONTROLLER_IMAGE = (
     "ghcr.io/cbizon/monkeybench-controller@sha256:"
-    "92e39b77ac2d58744e34890b51b57a069a280d4210cb4becc05d1b193b086af4"
+    "4359cc062ce346dfa42239bee6c017ae8fac7ae9fdd19efba6c39517d3e897a7"
 )
 
 

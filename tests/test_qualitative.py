@@ -159,8 +159,10 @@ def test_qualitative_review_schema_accepts_compact_review() -> None:
 
 
 def test_qualitative_renderer_writes_escaped_html(tmp_path: Path) -> None:
-    trial = tmp_path / "trial"
-    evaluation = trial / "evaluation"
+    trial = tmp_path / "collected-trial"
+    trial.mkdir()
+    output_root = tmp_path / "assessment-output"
+    evaluation = output_root / "evaluation"
     evaluation.mkdir(parents=True)
     review = valid_review()
     review["overall"]["bottom_line"] = "<script>alert('x')</script>"
@@ -169,6 +171,7 @@ def test_qualitative_renderer_writes_escaped_html(tmp_path: Path) -> None:
     environment = {
         **os.environ,
         "BRUNNER_ASSESSMENT_OUTPUT": str(output),
+        "BRUNNER_ASSESSMENT_OUTPUT_ROOT": str(output_root),
         "BRUNNER_TRIAL_ROOT": str(trial),
     }
 
@@ -186,6 +189,9 @@ def test_qualitative_renderer_writes_escaped_html(tmp_path: Path) -> None:
     assert "Difficulties and adaptations" in rendered
     assert "Detection performance" in rendered
     assert "Identification performance" in rendered
+    assert not (
+        trial / "evaluation/qualitative-review.html"
+    ).exists()
 
 
 def test_reviewed_trial_runs_custom_qualitative_assessment(

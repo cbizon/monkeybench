@@ -122,7 +122,7 @@ It is also used as the trusted evaluator and artifact-reader image. Reference
 answers remain on the separate reference PVC.
 
 ```bash
-export RELEASE=brunner-bb51a9e
+export RELEASE=brunner-bb51a9e-render-output
 export KUBECTL_VERSION=v1.31.9
 
 docker buildx build --platform linux/amd64 \
@@ -145,7 +145,7 @@ The currently published immutable images are:
 
 ```text
 agent:      ghcr.io/cbizon/monkeybench-agent@sha256:97ac6644fd5c34375ba67b75c7e38c916a590a203f6288cdc3110ba88f4ef8d6
-controller: ghcr.io/cbizon/monkeybench-controller@sha256:92e39b77ac2d58744e34890b51b57a069a280d4210cb4becc05d1b193b086af4
+controller: ghcr.io/cbizon/monkeybench-controller@sha256:4359cc062ce346dfa42239bee6c017ae8fac7ae9fdd19efba6c39517d3e897a7
 ```
 
 They are the defaults in `src/monkeybench/images.py`. Environment overrides
