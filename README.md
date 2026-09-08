@@ -92,15 +92,16 @@ checked against the answer labels and source metadata.
 ## Sterling Campaign
 
 The Sterling campaign uses one shared agent image and one Brunner campaign
-containing both Codex and Claude trials. It reproduces the current
-`granular_benchmark` model/effort matrix with Fable omitted:
+containing both Codex and Claude trials. It extends the established
+`granular_benchmark` model/effort matrix with Astra and omits Fable:
 
-- Codex: `gpt-5.6-sol`, `gpt-5.6-terra`, `gpt-5.6-luna`, `gpt-5.5`, and
-  `gpt-5.4`, each at `xhigh` and `low`.
+- Codex: `gpt-6-astra`, `gpt-5.6-sol`, `gpt-5.6-terra`, `gpt-5.6-luna`,
+  `gpt-5.5`, and `gpt-5.4`, each at `xhigh` and `low`. For Astra, `xhigh`
+  is the highest configured reasoning effort.
 - Claude: `claude-opus-5` and `claude-opus-4-8` at `max` and `low`;
   `claude-sonnet-5` at `max` and `low`.
 
-The full campaign has 16 deterministic trial IDs and is serialized by default.
+The full campaign has 18 deterministic trial IDs and is serialized by default.
 The fixed canary campaign contains `codex-gpt-5-4-low-r01` and
 `claude-sonnet-5-low-r01`. Active campaign state is cluster-resident and
 append-only by trial ID; repeated `campaign-sync` calls maintain the durable
@@ -122,18 +123,19 @@ It is also used as the trusted evaluator and artifact-reader image. Reference
 answers remain on the separate reference PVC.
 
 ```bash
-export RELEASE=brunner-bb51a9e-render-output
+export AGENT_RELEASE=brunner-bb51a9e-astra-20260907
+export CONTROLLER_RELEASE=brunner-d7b5f76-astra-20260908
 export KUBECTL_VERSION=v1.31.9
 
 docker buildx build --platform linux/amd64 \
   -f containers/agent.Dockerfile \
-  -t "ghcr.io/cbizon/monkeybench-agent:$RELEASE" \
+  -t "ghcr.io/cbizon/monkeybench-agent:$AGENT_RELEASE" \
   --push .
 
 docker buildx build --platform linux/amd64 \
   --build-arg KUBECTL_VERSION="$KUBECTL_VERSION" \
   -f containers/controller.Dockerfile \
-  -t "ghcr.io/cbizon/monkeybench-controller:$RELEASE" \
+  -t "ghcr.io/cbizon/monkeybench-controller:$CONTROLLER_RELEASE" \
   --push .
 ```
 
@@ -145,11 +147,14 @@ The currently published immutable images are:
 
 ```text
 agent:      ghcr.io/cbizon/monkeybench-agent@sha256:97ac6644fd5c34375ba67b75c7e38c916a590a203f6288cdc3110ba88f4ef8d6
-controller: ghcr.io/cbizon/monkeybench-controller@sha256:4359cc062ce346dfa42239bee6c017ae8fac7ae9fdd19efba6c39517d3e897a7
+controller: ghcr.io/cbizon/monkeybench-controller@sha256:952a7a85fa8c669912157f4350490e4fb0fdfc8749ad89e58e0529dd9764e124
+evaluator:  ghcr.io/cbizon/monkeybench-controller@sha256:4359cc062ce346dfa42239bee6c017ae8fac7ae9fdd19efba6c39517d3e897a7
 ```
 
-They are the defaults in `src/monkeybench/images.py`. Environment overrides
-are only needed when testing a newly published image before updating those
+They are the defaults in `src/monkeybench/images.py`. The evaluator remains
+pinned to the image used by the existing v2 trials so append-only campaign
+updates preserve their trusted evaluation identity. Environment overrides are
+only needed when testing a newly published image before updating those
 defaults.
 
 ### Configure Sterling inputs

@@ -31,6 +31,8 @@ DEFAULT_CODEX_BASE_URL = (
 DEFAULT_CODEX_ENVIRONMENT_KEY = "AZURE_OPENAI_API_KEY"
 
 CODEX_MATRIX = (
+    ("gpt-6-astra", "xhigh", 1),
+    ("gpt-6-astra", "low", 1),
     ("gpt-5.6-sol", "xhigh", 1),
     ("gpt-5.6-sol", "low", 1),
     ("gpt-5.6-terra", "xhigh", 1),

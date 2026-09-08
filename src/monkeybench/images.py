@@ -9,9 +9,12 @@ DEFAULT_AGENT_IMAGE = (
 )
 DEFAULT_CONTROLLER_IMAGE = (
     "ghcr.io/cbizon/monkeybench-controller@sha256:"
+    "952a7a85fa8c669912157f4350490e4fb0fdfc8749ad89e58e0529dd9764e124"
+)
+DEFAULT_EVALUATOR_IMAGE = (
+    "ghcr.io/cbizon/monkeybench-controller@sha256:"
     "4359cc062ce346dfa42239bee6c017ae8fac7ae9fdd19efba6c39517d3e897a7"
 )
-DEFAULT_EVALUATOR_IMAGE = DEFAULT_CONTROLLER_IMAGE
 DEFAULT_SQUID_IMAGE = (
     "ubuntu/squid@sha256:"
     "6a097f68bae708cedbabd6188d68c7e2e7a38cedd05a176e1cc0ba29e3bbe029"
@@ -35,7 +38,7 @@ def controller_image() -> str:
 def evaluator_image() -> str:
     return os.environ.get(
         "MONKEYBENCH_EVALUATOR_IMAGE",
-        controller_image(),
+        DEFAULT_EVALUATOR_IMAGE,
     )
 
 
