@@ -91,21 +91,23 @@ checked against the answer labels and source metadata.
 
 ## Sterling Campaign
 
-The Sterling campaign uses one shared agent image and one Brunner campaign
-containing both Codex and Claude trials. It extends the established
-`granular_benchmark` model/effort matrix with Astra and omits Fable:
+The Sterling campaign uses one Brunner campaign containing both Codex and
+Claude trials. It extends the established `granular_benchmark` model/effort
+matrix with Astra and Fable 5.1:
 
 - Codex: `gpt-6-astra`, `gpt-5.6-sol`, `gpt-5.6-terra`, `gpt-5.6-luna`,
   `gpt-5.5`, and `gpt-5.4`, each at `xhigh` and `low`. For Astra, `xhigh`
   is the highest configured reasoning effort.
 - Claude: `claude-opus-5` and `claude-opus-4-8` at `max` and `low`;
-  `claude-sonnet-5` at `max` and `low`.
+  `claude-sonnet-5` at `max` and `low`; and `claude-fable-5-1` at `low`.
 
-The full campaign has 18 deterministic trial IDs and is serialized by default.
+The full campaign has 19 deterministic trial IDs and is serialized by default.
 The fixed canary campaign contains `codex-gpt-5-4-low-r01` and
 `claude-sonnet-5-low-r01`. Active campaign state is cluster-resident and
 append-only by trial ID; repeated `campaign-sync` calls maintain the durable
 local archive used for monitoring, retirement, and later restoration.
+The original 18 trials retain their historical agent-image digest, while the
+new Fable trial inherits the current agent image with Claude Code 2.1.263.
 
 ### Build the images
 
@@ -123,8 +125,8 @@ It is also used as the trusted evaluator and artifact-reader image. Reference
 answers remain on the separate reference PVC.
 
 ```bash
-export AGENT_RELEASE=brunner-bb51a9e-astra-20260907
-export CONTROLLER_RELEASE=brunner-d7b5f76-astra-20260908
+export AGENT_RELEASE=claude-2.1.263-fable-5-1-20260908
+export CONTROLLER_RELEASE=brunner-d7b5f76-fable-5-1-20260908
 export KUBECTL_VERSION=v1.31.9
 
 docker buildx build --platform linux/amd64 \
@@ -146,8 +148,8 @@ candidate work starts.
 The currently published immutable images are:
 
 ```text
-agent:      ghcr.io/cbizon/monkeybench-agent@sha256:97ac6644fd5c34375ba67b75c7e38c916a590a203f6288cdc3110ba88f4ef8d6
-controller: ghcr.io/cbizon/monkeybench-controller@sha256:952a7a85fa8c669912157f4350490e4fb0fdfc8749ad89e58e0529dd9764e124
+agent:      ghcr.io/cbizon/monkeybench-agent@sha256:04a97a8a706b9a3815653f2a68c8d9a1b60739a212d728641bbb194f9f9cffaa
+controller: ghcr.io/cbizon/monkeybench-controller@sha256:1465ca81b311946a901206d9d6c33623eeabeafe125b386b43e9286ab73c150c
 evaluator:  ghcr.io/cbizon/monkeybench-controller@sha256:4359cc062ce346dfa42239bee6c017ae8fac7ae9fdd19efba6c39517d3e897a7
 ```
 

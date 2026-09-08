@@ -37,6 +37,7 @@ from monkeybench.definition import build_definition
 from monkeybench.images import (
     DEFAULT_AGENT_IMAGE,
     DEFAULT_CONTROLLER_IMAGE,
+    HISTORICAL_AGENT_IMAGE,
 )
 
 
@@ -61,14 +62,19 @@ EXPECTED_CLAUDE = {
     ("claude-opus-4-8", "low"),
     ("claude-sonnet-5", "max"),
     ("claude-sonnet-5", "low"),
+    ("claude-fable-5-1", "low"),
 }
 EXPECTED_AGENT_IMAGE = (
+    "ghcr.io/cbizon/monkeybench-agent@sha256:"
+    "04a97a8a706b9a3815653f2a68c8d9a1b60739a212d728641bbb194f9f9cffaa"
+)
+EXPECTED_HISTORICAL_AGENT_IMAGE = (
     "ghcr.io/cbizon/monkeybench-agent@sha256:"
     "97ac6644fd5c34375ba67b75c7e38c916a590a203f6288cdc3110ba88f4ef8d6"
 )
 EXPECTED_CONTROLLER_IMAGE = (
     "ghcr.io/cbizon/monkeybench-controller@sha256:"
-    "952a7a85fa8c669912157f4350490e4fb0fdfc8749ad89e58e0529dd9764e124"
+    "1465ca81b311946a901206d9d6c33623eeabeafe125b386b43e9286ab73c150c"
 )
 
 
@@ -98,22 +104,21 @@ def _campaign(monkeypatch: pytest.MonkeyPatch):
     return definition, contract, build_campaign(definition, contract)
 
 
-def test_matrix_matches_expected_model_sweep_without_fable() -> None:
+def test_matrix_matches_expected_model_sweep_with_fable_5_1() -> None:
     assert {(model, effort) for model, effort, _ in CODEX_MATRIX} == (
         EXPECTED_CODEX
     )
     assert {(model, effort) for model, effort, _ in CLAUDE_MATRIX} == (
         EXPECTED_CLAUDE
     )
-    assert all("fable" not in model for model, _, _ in CLAUDE_MATRIX)
     assert sum(count for _, _, count in CODEX_MATRIX) == 12
-    assert sum(count for _, _, count in CLAUDE_MATRIX) == 6
+    assert sum(count for _, _, count in CLAUDE_MATRIX) == 7
     assert all(count == 1 for _, _, count in CLAUDE_MATRIX)
 
 
 def test_campaign_trial_ids_are_unique() -> None:
     trials = build_campaign_trials()
-    assert len(trials) == 18
+    assert len(trials) == 19
     assert len({trial.test_id for trial in trials}) == len(trials)
     assert len(
         {(trial.provider, trial.model, trial.effort) for trial in trials}
@@ -130,13 +135,35 @@ def test_campaign_trial_ids_are_unique() -> None:
     assert "claude-sonnet-5-low-r01" in {
         trial.test_id for trial in trials
     }
+    assert "claude-fable-5-1-low-r01" in {
+        trial.test_id for trial in trials
+    }
     assert not any(
         trial.test_id.startswith("claude-claude-") for trial in trials
     )
 
 
+def test_new_fable_trial_uses_new_agent_image_only() -> None:
+    trials = build_campaign_trials()
+    fable = next(
+        trial
+        for trial in trials
+        if trial.test_id == "claude-fable-5-1-low-r01"
+    )
+    historical = tuple(
+        trial for trial in trials if trial.test_id != fable.test_id
+    )
+
+    assert fable.backend_image is None
+    assert all(
+        trial.backend_image == EXPECTED_HISTORICAL_AGENT_IMAGE
+        for trial in historical
+    )
+
+
 def test_default_images_are_published_immutable_digests() -> None:
     assert DEFAULT_AGENT_IMAGE == EXPECTED_AGENT_IMAGE
+    assert HISTORICAL_AGENT_IMAGE == EXPECTED_HISTORICAL_AGENT_IMAGE
     assert DEFAULT_CONTROLLER_IMAGE == EXPECTED_CONTROLLER_IMAGE
 
 
@@ -185,7 +212,7 @@ def test_full_campaign_uses_provider_scoped_secrets(
 ) -> None:
     _, _, campaign = _campaign(monkeypatch)
 
-    assert len(campaign.plan.trials) == 18
+    assert len(campaign.plan.trials) == 19
     assert {trial.provider for trial in campaign.plan.trials} == {
         "codex",
         "claude",
@@ -476,7 +503,7 @@ def test_agent_image_excludes_trusted_monkeybench_code() -> None:
     )
     assert f"ARG BRUNNER_REF={agent_brunner_ref}" in agent
     assert f"ARG BRUNNER_REF={controller_brunner_ref}" in controller
-    assert "ARG CLAUDE_CODE_VERSION=2.1.236" in agent
+    assert "ARG CLAUDE_CODE_VERSION=2.1.263" in agent
     assert "COPY src" not in agent
     assert "COPY challenge" not in agent
     assert "COPY src" in controller
