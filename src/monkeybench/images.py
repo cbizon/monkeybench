@@ -5,11 +5,15 @@ import os
 
 DEFAULT_AGENT_IMAGE = (
     "ghcr.io/cbizon/monkeybench-agent@sha256:"
+    "04a97a8a706b9a3815653f2a68c8d9a1b60739a212d728641bbb194f9f9cffaa"
+)
+HISTORICAL_AGENT_IMAGE = (
+    "ghcr.io/cbizon/monkeybench-agent@sha256:"
     "97ac6644fd5c34375ba67b75c7e38c916a590a203f6288cdc3110ba88f4ef8d6"
 )
 DEFAULT_CONTROLLER_IMAGE = (
     "ghcr.io/cbizon/monkeybench-controller@sha256:"
-    "952a7a85fa8c669912157f4350490e4fb0fdfc8749ad89e58e0529dd9764e124"
+    "1465ca81b311946a901206d9d6c33623eeabeafe125b386b43e9286ab73c150c"
 )
 DEFAULT_EVALUATOR_IMAGE = (
     "ghcr.io/cbizon/monkeybench-controller@sha256:"

@@ -7,7 +7,7 @@ COPY --from=node-runtime /usr/local /usr/local
 
 ARG BRUNNER_REF=bb51a9eb048f6f6470fb101124de8958f1fb748b
 ARG CODEX_VERSION=0.144.1
-ARG CLAUDE_CODE_VERSION=2.1.236
+ARG CLAUDE_CODE_VERSION=2.1.263
 
 RUN apt-get update \
     && apt-get install -y --no-install-recommends \

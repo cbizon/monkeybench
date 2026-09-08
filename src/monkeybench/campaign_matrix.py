@@ -11,6 +11,7 @@ from brunner.backends import KubernetesProfile
 from brunner.contract import OutputContract
 
 from monkeybench.images import (
+    HISTORICAL_AGENT_IMAGE,
     agent_image,
     controller_image,
     squid_image,
@@ -45,7 +46,7 @@ CODEX_MATRIX = (
     ("gpt-5.4", "low", 1),
 )
 
-CLAUDE_MATRIX = (
+HISTORICAL_CLAUDE_MATRIX = (
     ("claude-opus-5", "max", 1),
     ("claude-opus-5", "low", 1),
     ("claude-opus-4-8", "max", 1),
@@ -53,6 +54,12 @@ CLAUDE_MATRIX = (
     ("claude-sonnet-5", "max", 1),
     ("claude-sonnet-5", "low", 1),
 )
+
+NEW_CLAUDE_MATRIX = (
+    ("claude-fable-5-1", "low", 1),
+)
+
+CLAUDE_MATRIX = (*HISTORICAL_CLAUDE_MATRIX, *NEW_CLAUDE_MATRIX)
 
 CANARY_TRIAL_IDS = (
     "codex-gpt-5-4-low-r01",
@@ -78,6 +85,8 @@ def _trial_id(
 def build_trials(
     provider: str,
     matrix: tuple[tuple[str, str, int], ...],
+    *,
+    backend_image: str | None = None,
 ) -> tuple[CampaignTrial, ...]:
     trials = []
     for model, effort, run_count in matrix:
@@ -103,6 +112,7 @@ def build_trials(
                     provider=provider,
                     model=model,
                     effort=effort,
+                    backend_image=backend_image,
                     **connection,
                 )
             )
@@ -111,8 +121,17 @@ def build_trials(
 
 def build_campaign_trials() -> tuple[CampaignTrial, ...]:
     return (
-        *build_trials("codex", CODEX_MATRIX),
-        *build_trials("claude", CLAUDE_MATRIX),
+        *build_trials(
+            "codex",
+            CODEX_MATRIX,
+            backend_image=HISTORICAL_AGENT_IMAGE,
+        ),
+        *build_trials(
+            "claude",
+            HISTORICAL_CLAUDE_MATRIX,
+            backend_image=HISTORICAL_AGENT_IMAGE,
+        ),
+        *build_trials("claude", NEW_CLAUDE_MATRIX),
     )
 
 
