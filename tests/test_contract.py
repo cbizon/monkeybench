@@ -19,7 +19,10 @@ from monkeybench.definition import (
     build_reviewed_definition,
 )
 from monkeybench.campaign_matrix import DEFAULT_CODEX_BASE_URL
-from monkeybench.images import DEFAULT_CONTROLLER_IMAGE
+from monkeybench.images import (
+    DEFAULT_CONTROLLER_IMAGE,
+    DEFAULT_EVALUATOR_IMAGE,
+)
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -46,7 +49,7 @@ def test_contract_and_definition_validate() -> None:
         "-m",
         "monkeybench.evaluator",
     )
-    assert definition.evaluation.image == DEFAULT_CONTROLLER_IMAGE
+    assert definition.evaluation.image == DEFAULT_EVALUATOR_IMAGE
     assert definition.evaluation.primary_report == (
         "evaluation/detection-report.html"
     )

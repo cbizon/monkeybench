@@ -41,6 +41,8 @@ from monkeybench.images import (
 
 
 EXPECTED_CODEX = {
+    ("gpt-6-astra", "xhigh"),
+    ("gpt-6-astra", "low"),
     ("gpt-5.6-sol", "xhigh"),
     ("gpt-5.6-sol", "low"),
     ("gpt-5.6-terra", "xhigh"),
@@ -66,7 +68,7 @@ EXPECTED_AGENT_IMAGE = (
 )
 EXPECTED_CONTROLLER_IMAGE = (
     "ghcr.io/cbizon/monkeybench-controller@sha256:"
-    "4359cc062ce346dfa42239bee6c017ae8fac7ae9fdd19efba6c39517d3e897a7"
+    "952a7a85fa8c669912157f4350490e4fb0fdfc8749ad89e58e0529dd9764e124"
 )
 
 
@@ -96,7 +98,7 @@ def _campaign(monkeypatch: pytest.MonkeyPatch):
     return definition, contract, build_campaign(definition, contract)
 
 
-def test_matrix_matches_granular_benchmark_without_fable() -> None:
+def test_matrix_matches_expected_model_sweep_without_fable() -> None:
     assert {(model, effort) for model, effort, _ in CODEX_MATRIX} == (
         EXPECTED_CODEX
     )
@@ -104,19 +106,25 @@ def test_matrix_matches_granular_benchmark_without_fable() -> None:
         EXPECTED_CLAUDE
     )
     assert all("fable" not in model for model, _, _ in CLAUDE_MATRIX)
-    assert sum(count for _, _, count in CODEX_MATRIX) == 10
+    assert sum(count for _, _, count in CODEX_MATRIX) == 12
     assert sum(count for _, _, count in CLAUDE_MATRIX) == 6
     assert all(count == 1 for _, _, count in CLAUDE_MATRIX)
 
 
 def test_campaign_trial_ids_are_unique() -> None:
     trials = build_campaign_trials()
-    assert len(trials) == 16
+    assert len(trials) == 18
     assert len({trial.test_id for trial in trials}) == len(trials)
     assert len(
         {(trial.provider, trial.model, trial.effort) for trial in trials}
     ) == len(trials)
     assert "codex-gpt-5-4-low-r01" in {
+        trial.test_id for trial in trials
+    }
+    assert "codex-gpt-6-astra-xhigh-r01" in {
+        trial.test_id for trial in trials
+    }
+    assert "codex-gpt-6-astra-low-r01" in {
         trial.test_id for trial in trials
     }
     assert "claude-sonnet-5-low-r01" in {
@@ -177,7 +185,7 @@ def test_full_campaign_uses_provider_scoped_secrets(
 ) -> None:
     _, _, campaign = _campaign(monkeypatch)
 
-    assert len(campaign.plan.trials) == 16
+    assert len(campaign.plan.trials) == 18
     assert {trial.provider for trial in campaign.plan.trials} == {
         "codex",
         "claude",
@@ -462,9 +470,12 @@ def test_agent_image_excludes_trusted_monkeybench_code() -> None:
     controller = (root / "containers/controller.Dockerfile").read_text()
     dockerignore = (root / ".dockerignore").read_text()
 
-    brunner_ref = "bb51a9eb048f6f6470fb101124de8958f1fb748b"
-    assert f"ARG BRUNNER_REF={brunner_ref}" in agent
-    assert f"ARG BRUNNER_REF={brunner_ref}" in controller
+    agent_brunner_ref = "bb51a9eb048f6f6470fb101124de8958f1fb748b"
+    controller_brunner_ref = (
+        "d7b5f767187b8797ac764b5bb97a6cc6a665fcc0"
+    )
+    assert f"ARG BRUNNER_REF={agent_brunner_ref}" in agent
+    assert f"ARG BRUNNER_REF={controller_brunner_ref}" in controller
     assert "ARG CLAUDE_CODE_VERSION=2.1.236" in agent
     assert "COPY src" not in agent
     assert "COPY challenge" not in agent
